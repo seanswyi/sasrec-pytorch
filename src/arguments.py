@@ -25,6 +25,12 @@ def get_args() -> argparse.Namespace:
     )
 
     # Model arguments.
+    parser.add_argument(
+        '--hidden_dim',
+        default=50,
+        type=int,
+        help="Dimensionality of embedding matrix."
+    )
 
     # Data arguments.
     parser.add_argument(
