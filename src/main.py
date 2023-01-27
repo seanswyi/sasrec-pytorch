@@ -4,6 +4,7 @@ import time
 
 from arguments import get_args
 from dataset import Dataset
+from model.sasrec import SASRec
 
 
 def main() -> None:
@@ -11,6 +12,12 @@ def main() -> None:
     print(args)
 
     dataset = Dataset(args)
+
+    args.num_users = len(dataset.user2items)
+    args.num_items = len(dataset.item2users)
+
+    model = SASRec(args)
+
     import pdb; pdb.set_trace()
 
 
