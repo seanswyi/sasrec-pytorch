@@ -14,7 +14,7 @@ class Dataset:
         self.data_filepath = os.path.join(self.data_root, args.data_filename)
 
         self.data = self.load_data(data_filepath=self.data_filepath)
-        self.user2items = self.create_user2items(data=self.data)
+        self.user2items, self.item2users = self.create_mappings(data=self.data)
         splits = self.create_train_valid_test(user2items=self.user2items)
         self.user2items_train, self.user2items_valid, self.user2items_test = splits
 
@@ -26,12 +26,13 @@ class Dataset:
         lines = [l.strip().split() for l in lines]
         return lines
 
-    def create_user2items(self, data: list[list[User, Item]]) -> dict[User, list[Item]]:
+    def create_mappings(self, data: list[list[User, Item]]) -> (dict[User, list[Item]], dict[Item, list[User]]):
         """
         Convert the list of [user, item] pairs to a mapping where the users are keys \
             mapped to a list of items.
         """
         user2items = {}
+        item2users = {}
         pbar = tqdm(iterable=data,
                     desc="Creating user2items",
                     total=len(data))
@@ -41,7 +42,12 @@ class Dataset:
             except KeyError:
                 user2items[user] = [item]
 
-        return user2items
+            try:
+                item2users[item].append(user)
+            except KeyError:
+                item2users[item] = [user]
+
+        return user2items, item2users
 
     def create_train_valid_test(self,
                                 user2items: dict[User, list[Item]]) -> (dict[User, list[Item]],
