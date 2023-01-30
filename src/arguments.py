@@ -31,6 +31,10 @@ def get_args() -> argparse.Namespace:
         type=int,
         help="Dimensionality of embedding matrix."
     )
+    parser.add_argument(
+        '--num_layer',
+        default=1,
+    )
 
     # Data arguments.
     parser.add_argument(
