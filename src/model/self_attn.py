@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from scaled_dotprod_attn import scaled_dotprod_attn
+from .scaled_dotprod_attn import scaled_dotprod_attn
 
 
 class SelfAttn(nn.Module):

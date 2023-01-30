@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 
-from embedding_layer import EmbeddingLayer
-from self_attn import SelfAttn
+from .embedding_layer import EmbeddingLayer
+from .self_attn import SelfAttn
 
 
 class SASRec(nn.Module):
@@ -13,6 +13,9 @@ class SASRec(nn.Module):
         self.embedding_layer = EmbeddingLayer(num_items=args.num_items,
                                               hidden_dim=args.hidden_dim,
                                               max_seq_len=args.max_seq_len)
+        self.self_attention = SelfAttn(hidden_dim=args.hidden_dim)
 
     def forward(self, x):
-        pass
+        x_embedded = self.embedding_layer(x)
+        x_attn = self.self_attention(x_embedded)
+        import pdb; pdb.set_trace()

@@ -1,2 +1,2 @@
-User = str
-Item = str
+User = int
+Item = int

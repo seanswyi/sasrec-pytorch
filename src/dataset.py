@@ -21,12 +21,15 @@ class Dataset:
     def load_data(self, data_filepath: str) -> list[list[User, Item]]:
         """Load and format data."""
         with open(file=data_filepath) as f:
-            lines = f.readlines()
+            user_item_pairs = f.readlines()
 
-        lines = [l.strip().split() for l in lines]
-        return lines
+        user_item_pairs = [pair.strip().split() for pair in user_item_pairs]
+        user_item_pairs = [list(map(int, pair)) for pair in user_item_pairs]
 
-    def create_mappings(self, data: list[list[User, Item]]) -> (dict[User, list[Item]], dict[Item, list[User]]):
+        return user_item_pairs
+
+    def create_mappings(self, data: list[list[User, Item]]) -> (dict[User, list[Item]],
+                                                                dict[Item, list[User]]):
         """
         Convert the list of [user, item] pairs to a mapping where the users are keys \
             mapped to a list of items.
