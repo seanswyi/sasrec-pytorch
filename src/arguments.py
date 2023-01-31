@@ -32,8 +32,21 @@ def get_args() -> argparse.Namespace:
         help="Dimensionality of embedding matrix."
     )
     parser.add_argument(
-        '--num_layer',
+        '--num_blocks',
         default=1,
+        help="Number of self-attention -> FFNN blocks to stack."
+    )
+    parser.add_argument(
+        '--dropout_p',
+        default=0.1,
+        type=float,
+        help="Dropout rate applied to embedding layer and FFNN."
+    )
+    parser.add_argument(
+        '--share_item_emb',
+        action='store_true',
+        default=False,
+        help="Whether or not to use item matrix for prediction layer."
     )
 
     # Data arguments.
