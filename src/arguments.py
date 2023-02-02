@@ -38,7 +38,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--dropout_p',
-        default=0.1,
+        default=0.5,
         type=float,
         help="Dropout rate applied to embedding layer and FFNN."
     )
@@ -55,6 +55,20 @@ def get_args() -> argparse.Namespace:
         default=50,
         type=int,
         help="Maximum number of items to see. Denoted by $n$ in the paper."
+    )
+    parser.add_argument(
+        '--batch_size',
+        default=128,
+        type=int,
+        help="Batch size for batching data."
+    )
+
+    # Training arguments.
+    parser.add_argument(
+        '--lr',
+        default=0.001,
+        type=float,
+        help="Learning rate."
     )
 
     args = parser.parse_args()
