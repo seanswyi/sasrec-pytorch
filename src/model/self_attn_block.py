@@ -1,8 +1,7 @@
 import torch
 from torch import nn
 
-from .pointwise_ffnn import PointWiseFFNN
-from .self_attn import SelfAttn
+from model import PointWiseFFNN, SelfAttn
 
 
 class SelfAttnBlock(nn.Module):
