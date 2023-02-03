@@ -1,16 +1,26 @@
 import os
 
+import torch
+from torch.nn import functional as F
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
 User = str
 Item = str
+InputSequences = torch.Tensor
+Labels = torch.Tensor
 
 
 class Dataset:
     def __init__(self,
+                 batch_size: int,
+                 max_seq_len: int,
                  data_root: str,
                  data_filepath: str):
+        self.batch_size = batch_size
+        self.max_seq_len = max_seq_len
+
         self.data_root = data_root
         self.data_filepath = data_filepath
 
@@ -82,3 +92,39 @@ class Dataset:
                 user2items_test[user] = [items[-1]]
 
         return user2items_train, user2items_valid, user2items_test
+
+    def collate_fn(self, batch: list[list[int]]) -> (InputSequences, Labels):
+        """
+        Simple collate function for the DataLoader.
+          1. Truncate input sequences that are longer than max_seq_len from the front.
+          2. Pad input sequences that are shorter from the front.
+          3. Slice the sequences so that the last element is used as the label.
+        """
+        sequence_tensors = []
+        for idx, sequence in enumerate(batch):
+            sequence = torch.tensor(sequence)
+            if len(sequence) > self.max_seq_len:
+                sequence = sequence[-self.max_seq_len:]
+            else:
+                diff = self.max_seq_len - len(sequence)
+                sequence = F.pad(sequence, pad=(diff, 0))
+
+            sequence_tensors.append(sequence)
+
+        sequences = torch.stack(sequence_tensors)
+
+        inputs = sequences[:, :-1]
+        labels = sequences[:, -1]
+
+        return (inputs, labels)
+
+    def get_dataloader(self,
+                       data: dict[User, list[Item]],
+                       shuffle: bool=True) -> DataLoader:
+        """Create and return a DataLoader. Not considering users in this setting."""
+        item_sequences = list(data.values())
+        dataloader = DataLoader(dataset=item_sequences,
+                                batch_size=self.batch_size,
+                                shuffle=shuffle,
+                                collate_fn=self.collate_fn)
+        return dataloader
