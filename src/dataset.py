@@ -2,16 +2,17 @@ import os
 
 from tqdm import tqdm
 
-from utils.custom_type_hints import Item, User
+
+User = str
+Item = str
 
 
 class Dataset:
-    def __init__(self, args):
-        self.args = args
-
-        args.data_root = os.path.expanduser(path=args.data_root)
-        self.data_root = os.path.join(args.data_root, args.data_name)
-        self.data_filepath = os.path.join(self.data_root, args.data_filename)
+    def __init__(self,
+                 data_root: str,
+                 data_filepath: str):
+        self.data_root = data_root
+        self.data_filepath = data_filepath
 
         self.data = self.load_data(data_filepath=self.data_filepath)
         self.user2items, self.item2users = self.create_mappings(data=self.data)
