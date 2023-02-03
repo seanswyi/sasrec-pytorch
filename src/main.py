@@ -4,27 +4,38 @@ import time
 
 import torch
 from torch.nn import functional as F
+from torch import optim
 
-from arguments import get_args
+from utils import (get_args,
+                   DatasetArgs,
+                   ModelArgs,
+                   OptimizerArgs,
+                   TrainerArgs)
 from dataset import Dataset
 from model.sasrec import SASRec
+from trainer import Trainer
 
 
 def main() -> None:
     args = get_args()
-    print(args)
 
-    dataset = Dataset(args)
+    dataset_args = DatasetArgs(args)
+    dataset = Dataset(**vars(dataset_args))
 
-    args.num_users = len(dataset.user2items)
     args.num_items = len(dataset.item2users)
+    model_args = ModelArgs(args)
+    model = SASRec(**vars(model_args))
 
-    model = SASRec(args)
+    optimizer_args = OptimizerArgs(args)
+    optimizer = optim.Adam(params=model.parameters(),
+                           **vars(optimizer_args))
 
-    train_data = dataset.user2items_train
-    sample = torch.tensor(train_data[1])
-    sample = F.pad(input=sample, pad=(0, args.max_seq_len - sample.shape[0]))
-    model(sample)
+    trainer_args = TrainerArgs(args)
+    trainer = Trainer(dataset=dataset,
+                      model=model,
+                      optimizer=optimizer,
+                      **vars(trainer_args))
+
     import pdb; pdb.set_trace()
 
 
