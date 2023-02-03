@@ -7,6 +7,18 @@ def get_args() -> argparse.Namespace:
 
     # Dataset arguments.
     parser.add_argument(
+        '--max_seq_len',
+        default=50,
+        type=int,
+        help="Maximum number of items to see. Denoted by $n$ in the paper."
+    )
+    parser.add_argument(
+        '--batch_size',
+        default=128,
+        type=int,
+        help="Batch size for batching data."
+    )
+    parser.add_argument(
         '--data_root',
         default='~/projects/datasets',
         type=str,
@@ -50,20 +62,6 @@ def get_args() -> argparse.Namespace:
         help="Whether or not to use item matrix for prediction layer."
     )
 
-    # Trainer arguments.
-    parser.add_argument(
-        '--max_seq_len',
-        default=50,
-        type=int,
-        help="Maximum number of items to see. Denoted by $n$ in the paper."
-    )
-    parser.add_argument(
-        '--batch_size',
-        default=128,
-        type=int,
-        help="Batch size for batching data."
-    )
-
     # Optimizer arguments.
     parser.add_argument(
         '--lr',
@@ -96,6 +94,26 @@ def get_args() -> argparse.Namespace:
         help="Weight decay rate for Adam optimizer."
     )
 
+    # Trainer arguments.
+    parser.add_argument(
+        '--num_epochs',
+        default=10,
+        type=int,
+        help="Number of epochs to train the model."
+    )
+    parser.add_argument(
+        '--warmup_ratio',
+        default=0.05,
+        type=float,
+        help="Ratio to determine number of warmup steps."
+    )
+    parser.add_argument(
+        '--scheduler_type',
+        default='linear',
+        type=str,
+        help="Determines the type of scheduler to use."
+    )
+
     args = parser.parse_args()
     return args
 
@@ -105,6 +123,9 @@ class DatasetArgs:
         args.data_root = os.path.expanduser(path=args.data_root)
         self.data_root = os.path.join(args.data_root, args.data_name)
         self.data_filepath = os.path.join(self.data_root, args.data_filename)
+
+        self.batch_size = args.batch_size
+        self.max_seq_len = args.max_seq_len
 
 
 class ModelArgs:
@@ -120,15 +141,13 @@ class ModelArgs:
 class OptimizerArgs:
     def __init__(self, args: argparse.Namespace) -> None:
         self.lr = args.lr
-        self.beta1 = args.beta1
-        self.beta2 = args.beta2
+        self.betas = (args.beta1, args.beta2)
         self.eps = args.eps
         self.weight_decay = args.weight_decay
 
 
 class TrainerArgs:
     def __init__(self, args: argparse.Namespace) -> None:
-        self.batch_size = args.batch_size
         self.num_epochs = args.num_epochs
-        self.warmup_steps = args.warmup_steps
-        self.scheduler = args.scheduler
+        self.warmup_ratio = args.warmup_ratio
+        self.scheduler_type = args.scheduler_type
