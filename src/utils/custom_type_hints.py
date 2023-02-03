@@ -1,2 +1,0 @@
-User = int
-Item = int
