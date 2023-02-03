@@ -19,6 +19,8 @@ class SASRec(nn.Module):
                             for _ in range(args.num_blocks)]
         self.self_attn_blocks = nn.Sequential(*self_attn_blocks)
 
+        self.dropout = nn.Dropout(p=args.dropout_p)
+
         self.share_item_emb = args.share_item_emb
         if args.share_item_emb:
             self.classifier = nn.Linear(in_features=args.hidden_dim,
@@ -27,4 +29,4 @@ class SASRec(nn.Module):
     def forward(self, x):
         x_embedded = self.dropout(self.embedding_layer(x))
         x_attn = self.self_attn_blocks(x_embedded)
-        import pdb; pdb.set_trace()
+        return x_attn
