@@ -22,7 +22,7 @@ def main() -> None:
     dataset_args = DatasetArgs(args)
     dataset = Dataset(**vars(dataset_args))
 
-    args.num_items = len(dataset.item2users)
+    args.num_items = dataset.num_items
     model_args = ModelArgs(args)
     model = SASRec(**vars(model_args))
 
