@@ -21,7 +21,9 @@ class Dataset:
                  batch_size: int,
                  max_seq_len: int,
                  data_root: str,
-                 data_filepath: str):
+                 data_filepath: str,
+                 debug: bool):
+        self.debug = debug
         self.batch_size = batch_size
         self.max_seq_len = max_seq_len
 
@@ -31,7 +33,11 @@ class Dataset:
         self.data = self.load_data(data_filepath=self.data_filepath)
         self.user2items, self.item2users = self.create_mappings(data=self.data)
         self.num_users = len(self.user2items)
-        self.num_items = len(self.item2users)
+
+        if self.debug:
+            self.num_items = 52204
+        else:
+            self.num_items = len(self.item2users)
 
         splits = self.create_train_valid_test(user2items=self.user2items)
         self.user2items_train, self.user2items_valid, self.user2items_test = splits
@@ -40,6 +46,9 @@ class Dataset:
         """Load and format data."""
         with open(file=data_filepath) as f:
             user_item_pairs = f.readlines()
+
+        if self.debug:
+            user_item_pairs = user_item_pairs[:10]
 
         user_item_pairs = [pair.strip().split() for pair in user_item_pairs]
         user_item_pairs = [list(map(int, pair)) for pair in user_item_pairs]
@@ -95,8 +104,22 @@ class Dataset:
                 user2items_test[user] = []
             else:
                 user2items_train[user] = items[:-2]
-                user2items_valid[user] = [items[-2]]
-                user2items_test[user] = [items[-1]]
+
+                user2items_valid[user] = {'positive': [], 'negative': []}
+                user2items_valid[user]['positive'] = [items[-2]]
+
+                user2items_test[user] = {'positive': [], 'negative': []}
+                user2items_test[user]['positive'] = [items[-1]]
+
+                valid_negatives = get_negative_labels(positive_labels=[items[-2]],
+                                                      num_items=self.num_items,
+                                                      num_samples=100)
+                test_negatives = get_negative_labels(positive_labels=[items[-1]],
+                                                     num_items=self.num_items,
+                                                     num_samples=100)
+
+                user2items_valid[user]['negative'] = valid_negatives
+                user2items_test[user]['negative'] = test_negatives
 
         return user2items_train, user2items_valid, user2items_test
 
@@ -129,6 +152,7 @@ class Dataset:
         """Create and return a DataLoader. Not considering users in this setting."""
         item_sequences = list(data.values())
 
+        # For debugging the collate_fns. Remove later.
         batch = item_sequences[:4]
         sequence_tensors = []
         for idx, sequence in enumerate(batch):
@@ -142,6 +166,7 @@ class Dataset:
             sequence_tensors.append(sequence)
 
         sequences = torch.stack(sequence_tensors)
+        # Until here.
 
         import pdb; pdb.set_trace()
         dataloader = DataLoader(dataset=item_sequences,
