@@ -5,6 +5,12 @@ import os
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False
+    )
+
     # Dataset arguments.
     parser.add_argument(
         '--max_seq_len',
@@ -126,6 +132,7 @@ class DatasetArgs:
 
         self.batch_size = args.batch_size
         self.max_seq_len = args.max_seq_len
+        self.debug = args.debug
 
 
 class ModelArgs:
