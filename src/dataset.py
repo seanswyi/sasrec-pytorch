@@ -6,6 +6,8 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from utils import get_negative_labels, pad_or_truncate_seq
+
 
 User = str
 Item = str
@@ -98,34 +100,6 @@ class Dataset:
 
         return user2items_train, user2items_valid, user2items_test
 
-    def get_negative_labels(self,
-                            positive_labels: PositiveLabels,
-                            num_samples: int=1) -> NegativeLabels:
-        """
-        `seen` refers to the positive label. Sampling happens as following:
-          1. Until we've reached our desired number of samples:
-            1.1 Get sample candidates by excluding `seen` from the range.
-            1.2 Once a new negative label is sampled, update `seen` and continue.
-          2. Return negative sample sequences once all are done.
-        """
-        negative_labels = []
-        for positive_label in tqdm(positive_labels):
-            seen = [positive_label]
-            count = 0
-            while count < num_samples:
-                candidates = [idx for idx in range(1, self.num_items + 1) if idx not in seen]
-                negative_label = random.choice(candidates)
-
-                while negative_label in seen:
-                    negative_label = random.choice(candidates)
-
-                seen.append(negative_label)
-                count += 1
-            negative_labels.append(seen[1:])
-
-        negative_labels = torch.tensor(negative_labels)
-        return negative_labels
-
     def collate_fn_train(self, batch: list[list[int]]) -> (InputSequences,
                                                            PositiveLabels,
                                                            NegativeLabels):
@@ -137,20 +111,15 @@ class Dataset:
         """
         sequence_tensors = []
         for idx, sequence in enumerate(batch):
-            sequence = torch.tensor(sequence)
-            if len(sequence) > self.max_seq_len:
-                sequence = sequence[-self.max_seq_len:]
-            else:
-                diff = self.max_seq_len - len(sequence)
-                sequence = F.pad(sequence, pad=(diff, 0))
-
+            sequence = pad_or_truncate_seq(sequence)
             sequence_tensors.append(sequence)
 
         sequences = torch.stack(sequence_tensors)
 
         inputs = sequences[:, :-1]
         positive_labels = sequences[:, -1]
-        negative_labels = self.get_negative_labels(positive_labels)
+        negative_labels = self.get_negative_labels(positive_labels=positive_labels,
+                                                   num_items=self.num_items)
 
         return (inputs, positive_labels, negative_labels)
 
