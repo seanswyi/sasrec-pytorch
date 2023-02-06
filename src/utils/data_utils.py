@@ -1,38 +1,34 @@
+import random
+
 import torch
 from torch.nn import functional as F
 
 
-PositiveLabels = torch.Tensor
-NegativeLabels = torch.Tensor
+InputSequences = torch.Tensor
+PositiveSamples = torch.Tensor
+NegativeSamples = torch.Tensor
 
 
-def get_negative_labels(positive_labels: PositiveLabels,
-                        num_items: int,
-                        num_samples: int=1) -> NegativeLabels:
+def get_negative_samples(positive_labels: PositiveSamples,
+                         num_items: int,
+                         num_samples: int=1) -> NegativeSamples:
     """
-    `seen` refers to the positive label. Sampling happens as following:
-        1. Until we've reached our desired number of samples:
-        1.1 Get sample candidates by excluding `seen` from the range.
-        1.2 Once a new negative label is sampled, update `seen` and continue.
-        2. Return negative sample sequences once all are done.
+    `seen` refers to the positive labels.
+    `candidates` is a list of item IDs excluding the positive labels.
+    `random.sample` is used to sample the negative labels.
     """
-    negative_labels = []
-    for positive_label in tqdm(positive_labels):
-        seen = [positive_label]
-        count = 0
-        while count < num_samples:
-            candidates = [idx for idx in range(1, num_items + 1) if idx not in seen]
-            negative_label = random.choice(candidates)
+    negative_samples = []
+    for positive_sample in positive_samples:
+        seen = [positive_sample]
+        candidates = [idx for idx in range(1, num_items + 1) if idx not in seen]
+        negative_sample = random.sample(population=candidates, k=num_samples)
 
-            while negative_label in seen:
-                negative_label = random.choice(candidates)
+        assert len(negative_sample) == len(set(negative_sample))
 
-            seen.append(negative_label)
-            count += 1
-        negative_labels.append(seen[1:])
+        negative_samples.append(negative_sample)
 
-    negative_labels = torch.tensor(negative_labels)
-    return negative_labels
+    negative_samples = torch.tensor(negative_samples)
+    return negative_samples
 
 
 def pad_or_truncate_seq(sequence: list[int],
