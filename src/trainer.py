@@ -42,6 +42,16 @@ class Trainer:
         epoch_pbar = trange(iterable=self.num_epochs,
                             desc="Epochs: ",
                             total=self.num_epochs)
+        for epoch in epoch_bar:
+            self.model.train()
+            self.model.zero_grad()
+            self.optimizer.zero_grad()
+
+            train_pbar = tqdm(iterable=self.train_dataloader,
+                              desc="Training",
+                              total=len(self.train_dataloader))
+            for batch in train_pbar:
+                import pdb; pdb.set_trace()
 
     def evaluate(self):
         pass
