@@ -9,7 +9,7 @@ PositiveSamples = torch.Tensor
 NegativeSamples = torch.Tensor
 
 
-def get_negative_samples(positive_labels: PositiveSamples,
+def get_negative_samples(positive_samples: PositiveSamples,
                          num_items: int,
                          num_samples: int=1) -> NegativeSamples:
     """
