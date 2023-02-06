@@ -6,14 +6,14 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils import get_negative_labels, pad_or_truncate_seq
+from utils import get_negative_samples, pad_or_truncate_seq
 
 
 User = str
 Item = str
 InputSequences = torch.Tensor
-PositiveLabels = torch.Tensor
-NegativeLabels = torch.Tensor
+PositiveSamples = torch.Tensor
+NegativeSamples = torch.Tensor
 
 
 class Dataset:
@@ -111,12 +111,12 @@ class Dataset:
                 user2items_test[user] = {'positive': [], 'negative': []}
                 user2items_test[user]['positive'] = [items[-1]]
 
-                valid_negatives = get_negative_labels(positive_labels=[items[-2]],
+                valid_negatives = get_negative_samples(positive_samples=[items[-2]],
+                                                       num_items=self.num_items,
+                                                       num_samples=100)
+                test_negatives = get_negative_samples(positive_samples=[items[-1]],
                                                       num_items=self.num_items,
                                                       num_samples=100)
-                test_negatives = get_negative_labels(positive_labels=[items[-1]],
-                                                     num_items=self.num_items,
-                                                     num_samples=100)
 
                 user2items_valid[user]['negative'] = valid_negatives
                 user2items_test[user]['negative'] = test_negatives
@@ -124,8 +124,8 @@ class Dataset:
         return user2items_train, user2items_valid, user2items_test
 
     def collate_fn_train(self, batch: list[list[int]]) -> (InputSequences,
-                                                           PositiveLabels,
-                                                           NegativeLabels):
+                                                           PositiveSamples,
+                                                           NegativeSamples):
         """
         Simple collate function for the DataLoader.
           1. Truncate input sequences that are longer than max_seq_len from the front.
@@ -140,35 +140,17 @@ class Dataset:
         sequences = torch.stack(sequence_tensors)
 
         inputs = sequences[:, :-1]
-        positive_labels = sequences[:, -1]
-        negative_labels = self.get_negative_labels(positive_labels=positive_labels,
-                                                   num_items=self.num_items)
+        positive_samples = sequences[:, -1]
+        negative_samples = self.get_negative_labels(positive_samples=positive_samples,
+                                                    num_items=self.num_items)
 
-        return (inputs, positive_labels, negative_labels)
+        return (inputs, positive_samples, negative_samples)
 
     def get_dataloader(self,
                        data: dict[User, list[Item]],
                        shuffle: bool=True) -> DataLoader:
         """Create and return a DataLoader. Not considering users in this setting."""
         item_sequences = list(data.values())
-
-        # For debugging the collate_fns. Remove later.
-        batch = item_sequences[:4]
-        sequence_tensors = []
-        for idx, sequence in enumerate(batch):
-            sequence = torch.tensor(sequence)
-            if len(sequence) > self.max_seq_len:
-                sequence = sequence[-self.max_seq_len:]
-            else:
-                diff = self.max_seq_len - len(sequence)
-                sequence = F.pad(sequence, pad=(diff, 0))
-
-            sequence_tensors.append(sequence)
-
-        sequences = torch.stack(sequence_tensors)
-        # Until here.
-
-        import pdb; pdb.set_trace()
         dataloader = DataLoader(dataset=item_sequences,
                                 batch_size=self.batch_size,
                                 shuffle=shuffle,
