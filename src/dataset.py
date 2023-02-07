@@ -1,12 +1,13 @@
 import os
 import random
 
+import numpy as np
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils import get_negative_samples, pad_or_truncate_seq
+from utils import get_positive2negatives, pad_or_truncate_seq
 
 
 User = str
@@ -38,6 +39,8 @@ class Dataset:
             self.num_items = 52204
         else:
             self.num_items = len(self.item2users)
+
+        self.positive2negatives = get_positive2negatives(self.num_items)
 
         splits = self.create_train_valid_test(user2items=self.user2items)
         self.user2items_train, self.user2items_valid, self.user2items_test = splits
@@ -104,22 +107,8 @@ class Dataset:
                 user2items_test[user] = []
             else:
                 user2items_train[user] = items[:-2]
-
-                user2items_valid[user] = {'positive': [], 'negative': []}
-                user2items_valid[user]['positive'] = [items[-2]]
-
-                user2items_test[user] = {'positive': [], 'negative': []}
-                user2items_test[user]['positive'] = [items[-1]]
-
-                valid_negatives = get_negative_samples(positive_samples=[items[-2]],
-                                                       num_items=self.num_items,
-                                                       num_samples=100)
-                test_negatives = get_negative_samples(positive_samples=[items[-1]],
-                                                      num_items=self.num_items,
-                                                      num_samples=100)
-
-                user2items_valid[user]['negative'] = valid_negatives
-                user2items_test[user]['negative'] = test_negatives
+                user2items_valid[user] = [items[-2]]
+                user2items_test[user] = [items[-1]]
 
         return user2items_train, user2items_valid, user2items_test
 
