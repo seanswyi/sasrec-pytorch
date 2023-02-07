@@ -115,7 +115,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--scheduler_type',
-        default='linear',
+        default='onecycle',
         type=str,
         help="Determines the type of scheduler to use."
     )
@@ -155,6 +155,7 @@ class OptimizerArgs:
 
 class TrainerArgs:
     def __init__(self, args: argparse.Namespace) -> None:
+        self.max_lr = args.lr
         self.num_epochs = args.num_epochs
         self.warmup_ratio = args.warmup_ratio
         self.scheduler_type = args.scheduler_type
