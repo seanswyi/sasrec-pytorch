@@ -1,13 +1,36 @@
+import numpy as np
 import random
 
 import torch
 from torch.nn import functional as F
+from tqdm import tqdm
 
 
 InputSequences = torch.Tensor
 PositiveSamples = torch.Tensor
 NegativeSamples = torch.Tensor
 
+
+def get_positive2negatives(num_items: int,
+                           num_samples: int=100) -> list[int]:
+    """
+    Creates a dictionary that maps an integer to an array of
+      negative integers. This dictionary will be used later
+      when we create negative samples for each positive sample.
+    """
+    all_samples = np.arange(1, num_items + 1)
+    positive2negatives = {}
+    for positive_sample in tqdm(iterable=all_samples, desc="Negs", total=all_samples.shape[0]):
+        candidates = np.concatenate((np.arange(positive_sample),
+                                     np.arange(positive_sample + 1, num_items + 1)),
+                                    axis=0)
+        negative_samples = np.random.choice(candidates,
+                                            size=(num_samples,),
+                                            replace=False)
+
+        positive2negatives[positive_sample] = negative_samples
+
+    return positive2negatives
 
 def get_negative_samples(positive_samples: PositiveSamples,
                          num_items: int,
@@ -17,6 +40,7 @@ def get_negative_samples(positive_samples: PositiveSamples,
     `candidates` is a list of item IDs excluding the positive labels.
     `random.sample` is used to sample the negative labels.
     """
+    import pdb; pdb.set_trace()
     negative_samples = []
     for positive_sample in positive_samples:
         seen = [positive_sample]
