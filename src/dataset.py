@@ -32,6 +32,10 @@ class Dataset:
         self.data_filepath = data_filepath
 
         self.data = self.load_data(data_filepath=self.data_filepath)
+
+        if self.debug:
+            self.data = self.data[:100]
+
         self.user2items, self.item2users = self.create_mappings(data=self.data)
         self.num_users = len(self.user2items)
 
@@ -112,9 +116,7 @@ class Dataset:
 
         return user2items_train, user2items_valid, user2items_test
 
-    def collate_fn_train(self, batch: list[list[int]]) -> (InputSequences,
-                                                           PositiveSamples,
-                                                           NegativeSamples):
+    def collate_fn(self, batch: list[list[int]]) -> InputSequences:
         """
         Simple collate function for the DataLoader.
           1. Truncate input sequences that are longer than max_seq_len from the front.
@@ -123,17 +125,12 @@ class Dataset:
         """
         sequence_tensors = []
         for idx, sequence in enumerate(batch):
-            sequence = pad_or_truncate_seq(sequence)
+            sequence = pad_or_truncate_seq(sequence, max_seq_len=self.max_seq_len)
             sequence_tensors.append(sequence)
 
-        sequences = torch.stack(sequence_tensors)
+        input_sequences = torch.stack(sequence_tensors)
 
-        inputs = sequences[:, :-1]
-        positive_samples = sequences[:, -1]
-        negative_samples = self.get_negative_labels(positive_samples=positive_samples,
-                                                    num_items=self.num_items)
-
-        return (inputs, positive_samples, negative_samples)
+        return input_sequences
 
     def get_dataloader(self,
                        data: dict[User, list[Item]],
@@ -143,5 +140,5 @@ class Dataset:
         dataloader = DataLoader(dataset=item_sequences,
                                 batch_size=self.batch_size,
                                 shuffle=shuffle,
-                                collate_fn=self.collate_fn_train)
+                                collate_fn=self.collate_fn)
         return dataloader
