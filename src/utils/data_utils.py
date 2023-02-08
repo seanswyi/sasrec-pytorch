@@ -1,6 +1,6 @@
-import numpy as np
 import random
 
+import numpy as np
 import torch
 from torch.nn import functional as F
 from tqdm import tqdm
@@ -32,27 +32,25 @@ def get_positive2negatives(num_items: int,
 
     return positive2negatives
 
-def get_negative_samples(positive_samples: PositiveSamples,
-                         num_items: int,
-                         num_samples: int=1) -> NegativeSamples:
-    """
-    `seen` refers to the positive labels.
-    `candidates` is a list of item IDs excluding the positive labels.
-    `random.sample` is used to sample the negative labels.
-    """
-    import pdb; pdb.set_trace()
-    negative_samples = []
-    for positive_sample in positive_samples:
-        seen = [positive_sample]
-        candidates = [idx for idx in range(1, num_items + 1) if idx not in seen]
-        negative_sample = random.sample(population=candidates, k=num_samples)
 
-        assert len(negative_sample) == len(set(negative_sample))
+def get_negative_samples(positive2negatives: dict[int, list[int]],
+                         positive_seqs: torch.Tensor,
+                         num_samples=1) -> torch.Tensor:
+    negative_seqs = torch.zeros(size=positive_seqs.shape, dtype=torch.long)
+    for row_idx in range(positive_seqs.shape[0]):
+        for col_idx in range(positive_seqs[row_idx].shape[0]):
+            positive_sample = positive_seqs[row_idx][col_idx].item()
 
-        negative_samples.append(negative_sample)
+            if positive_sample == 0:
+                continue
 
-    negative_samples = torch.tensor(negative_samples)
-    return negative_samples
+            negative_samples = positive2negatives[positive_sample]
+            negative_sample = np.random.choice(a=negative_samples,
+                                               size=(num_samples,),
+                                               replace=False)
+            negative_seqs[row_idx][col_idx] = negative_sample[0]
+
+    return negative_seq
 
 
 def pad_or_truncate_seq(sequence: list[int],
