@@ -36,39 +36,70 @@ class Trainer:
 
         self.model = model
         self.optimizer = optimizer
+        self.scheduler = get_scheduler(optimizer=optimizer,
+                                       scheduler_type=scheduler_type,
+                                       max_lr=max_lr,
+                                       num_batches=len(self.train_dataloader),
+                                       num_epochs=num_epochs,
+                                       warmup_ratio=warmup_ratio)
+
+    def calculate_bce_loss(self,
+                           positive_idxs: torch.Tensor,
+                           negative_idxs: torch.Tensor,
+                           positive_logits: torch.Tensor,
+                           negative_logits: torch.Tensor) -> torch.Tensor:
+        loss_func = nn.BCEWithLogitsLoss()
+
+        positive_logits = positive_logits[positive_idxs]
+        positive_labels = torch.ones(size=positive_logits.shape)
+
+        negative_logits = negative_logits[negative_idxs]
+        negative_labels = torch.zeros(size=negative_logits.shape)
+
+        positive_loss = loss_func(positive_logits, positive_labels)
+        negative_loss = loss_func(negative_logits, negative_labels)
+
+        return positive_loss + negative_loss
 
     def train(self) -> None:
-        # loss_func = nn.CrossEntropyLoss(ignore_idx=0)
-        scheduler = get_scheduler(optimizer=self.optimizer,
-                                  scheduler_type=self.scheduler_type,
-                                  max_lr=self.max_lr,
-                                  num_batches=len(self.train_dataloader),
-                                  num_epochs=self.num_epochs,
-                                  warmup_ratio=self.warmup_ratio)
-
         epoch_pbar = trange(self.num_epochs,
                             desc="Epochs: ",
                             total=self.num_epochs)
         for epoch in epoch_pbar:
             self.model.train()
             self.model.zero_grad()
-            self.optimizer.zero_grad()
 
             train_pbar = tqdm(iterable=self.train_dataloader,
                               desc="Training",
                               total=len(self.train_dataloader))
             for batch in train_pbar:
+                self.optimizer.zero_grad()
+
                 positive_seqs = batch.clone()
+                positive_idxs = torch.where(positive_seqs != 0)
 
                 batch[:, -1] = 0
                 input_seqs = batch.roll(shifts=1)
                 negative_seqs = get_negative_samples(self.positive2negatives, positive_seqs)
+                negative_idxs = torch.where(negative_seqs != 0)
 
                 inputs = {'input_seqs': input_seqs,
                           'positive_seqs': positive_seqs,
                           'negative_seqs': negative_seqs}
+
                 output = self.model(**inputs)
-                import pdb; pdb.set_trace()
+                assert len(output) == 3, f"Wrong number of outputs ({len(output)})"
+
+                positive_logits = output[1]
+                negative_logits = output[2]
+
+                loss = self.calculate_bce_loss(positive_idxs=positive_idxs,
+                                               negative_idxs=negative_idxs,
+                                               positive_logits=positive_logits,
+                                               negative_logits=negative_logits)
+                loss.backward()
+                self.optimizer.step()
+                self.scheduler.step()
 
     def evaluate(self):
         pass
