@@ -53,7 +53,7 @@ class SASRec(nn.Module):
             positive_logits = input_attn * positive_emb
             negative_logits = input_attn * negative_emb
 
-            outputs += positive_logits
-            outputs += negative_logits
+            outputs += (positive_logits,)
+            outputs += (negative_logits,)
 
         return outputs
