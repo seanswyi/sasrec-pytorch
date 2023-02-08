@@ -50,7 +50,7 @@ def get_negative_samples(positive2negatives: dict[int, list[int]],
                                                replace=False)
             negative_seqs[row_idx][col_idx] = negative_sample[0]
 
-    return negative_seq
+    return negative_seqs
 
 
 def pad_or_truncate_seq(sequence: list[int],
