@@ -27,10 +27,10 @@ class SASRec(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout_p)
 
-        self.share_item_emb = share_item_emb
-        if not share_item_emb:
-            self.classifier = nn.Linear(in_features=hidden_dim,
-                                        out_features=num_items)
+        self.classifier = nn.Linear(in_features=hidden_dim,
+                                    out_features=num_items)
+        if share_item_emb:
+            self.classifier.weight = self.embedding_layer.item_emb_matrix.weight.transpose(1, 0)
 
     def forward(self,
                 input_seqs: torch.Tensor,
@@ -38,11 +38,7 @@ class SASRec(nn.Module):
                 negative_seqs: torch.Tensor=None) -> torch.Tensor:
         input_emb = self.dropout(self.embedding_layer(input_seqs))
         input_attn = self.self_attn_blocks(input_emb)
-
-        if not self.share_item_emb:
-            output_logits = self.classifier(input_attn)
-        else:
-            output_logits = input_attn @ self.embedding_layer.item_emb_matrix.weight.transpose(1, 0)
+        output_logits = self.classifier(input_attn)
 
         outputs = (output_logits,)
 
