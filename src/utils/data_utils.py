@@ -11,6 +11,15 @@ PositiveSamples = torch.Tensor
 NegativeSamples = torch.Tensor
 
 
+def get_device() -> str:
+    if torch.cuda.is_available():
+        return 'cuda'
+    elif torch.backends.mps.is_available():
+        return 'mps'
+    else:
+        return 'cpu'
+
+
 def get_positive2negatives(num_items: int,
                            num_samples: int=100) -> list[int]:
     """
@@ -20,7 +29,10 @@ def get_positive2negatives(num_items: int,
     """
     all_samples = np.arange(1, num_items + 1)
     positive2negatives = {}
-    for positive_sample in tqdm(iterable=all_samples, desc="Negs", total=all_samples.shape[0]):
+    pbar = tqdm(iterable=all_samples,
+                desc="Creating positive2negatives",
+                total=all_samples.shape[0])
+    for positive_sample in pbar:
         candidates = np.concatenate((np.arange(positive_sample),
                                      np.arange(positive_sample + 1, num_items + 1)),
                                     axis=0)
