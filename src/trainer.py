@@ -18,7 +18,10 @@ class Trainer:
                  max_lr: float,
                  num_epochs: int,
                  warmup_ratio: float,
-                 scheduler_type: str) -> None:
+                 scheduler_type: str,
+                 device: str) -> None:
+        self.device = device
+
         self.train_data = dataset.user2items_train
         self.valid_data = dataset.user2items_valid
         self.test_data = dataset.user2items_test
@@ -51,10 +54,10 @@ class Trainer:
         loss_func = nn.BCEWithLogitsLoss()
 
         positive_logits = positive_logits[positive_idxs]
-        positive_labels = torch.ones(size=positive_logits.shape)
+        positive_labels = torch.ones(size=positive_logits.shape).to(self.device)
 
         negative_logits = negative_logits[negative_idxs]
-        negative_labels = torch.zeros(size=negative_logits.shape)
+        negative_labels = torch.zeros(size=negative_logits.shape).to(self.device)
 
         positive_loss = loss_func(positive_logits, positive_labels)
         negative_loss = loss_func(negative_logits, negative_labels)
@@ -62,12 +65,15 @@ class Trainer:
         return positive_loss + negative_loss
 
     def train(self) -> None:
+        num_steps = 0
         epoch_pbar = trange(self.num_epochs,
                             desc="Epochs: ",
                             total=self.num_epochs)
         for epoch in epoch_pbar:
             self.model.train()
             self.model.zero_grad()
+
+            epoch_loss = 0
 
             train_pbar = tqdm(iterable=self.train_dataloader,
                               desc="Training",
@@ -83,10 +89,9 @@ class Trainer:
                 negative_seqs = get_negative_samples(self.positive2negatives, positive_seqs)
                 negative_idxs = torch.where(negative_seqs != 0)
 
-                inputs = {'input_seqs': input_seqs,
-                          'positive_seqs': positive_seqs,
-                          'negative_seqs': negative_seqs}
-
+                inputs = {'input_seqs': input_seqs.to(self.device),
+                          'positive_seqs': positive_seqs.to(self.device),
+                          'negative_seqs': negative_seqs.to(self.device)}
                 output = self.model(**inputs)
                 assert len(output) == 3, f"Wrong number of outputs ({len(output)})"
 
@@ -98,8 +103,15 @@ class Trainer:
                                                positive_logits=positive_logits,
                                                negative_logits=negative_logits)
                 loss.backward()
+                epoch_loss += loss.item()
                 self.optimizer.step()
                 self.scheduler.step()
+
+                num_steps += 1
+
+            print(f"Epoch {epoch}, loss: {epoch_loss: 0.6f}")
+        import pdb; pdb.set_trace()
+
 
     def evaluate(self):
         pass
