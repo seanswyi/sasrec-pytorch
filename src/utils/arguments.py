@@ -102,6 +102,12 @@ def get_args() -> argparse.Namespace:
 
     # Trainer arguments.
     parser.add_argument(
+        '--device',
+        default='',
+        type=str,
+        help="Device to use."
+    )
+    parser.add_argument(
         '--num_epochs',
         default=10,
         type=int,
@@ -155,6 +161,7 @@ class OptimizerArgs:
 
 class TrainerArgs:
     def __init__(self, args: argparse.Namespace) -> None:
+        self.device = args.device
         self.max_lr = args.lr
         self.num_epochs = args.num_epochs
         self.warmup_ratio = args.warmup_ratio
