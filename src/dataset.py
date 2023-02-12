@@ -111,8 +111,14 @@ class Dataset:
                 user2items_test[user] = []
             else:
                 user2items_train[user] = items[:-2]
-                user2items_valid[user] = [items[-2]]
-                user2items_test[user] = [items[-1]]
+
+                valid_input_seq = items[:-2]
+                valid_label = items[-2]
+                user2items_valid[user] = (valid_input_seq, valid_label)
+
+                test_input_seq = valid_input_seq + [valid_label]
+                test_label = items[-1]
+                user2items_test[user] = (test_input_seq, test_label)
 
         return user2items_train, user2items_valid, user2items_test
 
@@ -134,9 +140,16 @@ class Dataset:
 
     def get_dataloader(self,
                        data: dict[User, list[Item]],
-                       shuffle: bool=True) -> DataLoader:
+                       shuffle: bool=True,
+                       split: str='train') -> DataLoader:
         """Create and return a DataLoader. Not considering users in this setting."""
         item_sequences = list(data.values())
+
+        if split in ['valid', 'test']:
+            shuffle = False
+
+        import pdb; pdb.set_trace()
+
         dataloader = DataLoader(dataset=item_sequences,
                                 batch_size=self.batch_size,
                                 shuffle=shuffle,
