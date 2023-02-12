@@ -9,7 +9,7 @@ class EmbeddingLayer(nn.Module):
                  max_seq_len: int) -> None:
         super().__init__()
 
-        self.item_emb_matrix = nn.Embedding(num_embeddings=num_items,
+        self.item_emb_matrix = nn.Embedding(num_embeddings=num_items + 1,
                                             embedding_dim=hidden_dim)
         self.positional_emb = nn.Parameter(data=torch.rand(size=(max_seq_len, hidden_dim)))
         nn.init.normal_(self.positional_emb)
