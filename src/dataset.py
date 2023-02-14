@@ -15,6 +15,7 @@ Item = str
 InputSequences = torch.Tensor
 PositiveSamples = torch.Tensor
 NegativeSamples = torch.Tensor
+ItemIdxs = torch.Tensor
 
 
 class Dataset:
@@ -122,36 +123,79 @@ class Dataset:
 
         return user2items_train, user2items_valid, user2items_test
 
-    def collate_fn(self, batch: list[list[int]]) -> InputSequences:
+    def collate_fn_train(self, batch: list[list[int]]) -> InputSequences:
         """
         Simple collate function for the DataLoader.
-          1. Truncate input sequences that are longer than max_seq_len from the front.
-          2. Pad input sequences that are shorter from the front.
-          3. Slice the sequences so that the last element is used as the label.
+          1. Truncate input seqs that are longer than max_seq_len from the front.
+          2. Pad input seqs that are shorter from the front.
+          3. Slice the seqs so that the last element is used as the label.
         """
-        sequence_tensors = []
-        for idx, sequence in enumerate(batch):
-            sequence = pad_or_truncate_seq(sequence, max_seq_len=self.max_seq_len)
-            sequence_tensors.append(sequence)
+        seq_tensors = []
+        for idx, seq in enumerate(batch):
+            seq = pad_or_truncate_seq(seq, max_seq_len=self.max_seq_len)
+            seq_tensors.append(seq)
 
-        input_sequences = torch.stack(sequence_tensors)
+        input_seqs = torch.stack(seq_tensors)
 
-        return input_sequences
+        return input_seqs
+
+    def collate_fn_eval(self, batch: list[list[int]]) -> (InputSequences, ItemIdxs):
+        """
+        Essentially the same thing as collate_fn_train except for evaluation
+          we have to take into consideration the positive and negative samples
+          we'll be getting the logits for.
+
+        The hidden representations of these samples are matrix multiplied with
+          the hidden representations of the input sequence in order to get
+          predictions.
+        """
+        input_seqs = [x[0] for x in batch]
+        seq_tensors = []
+        for idx, seq in enumerate(input_seqs):
+            seq = pad_or_truncate_seq(seq, max_seq_len=self.max_seq_len)
+            seq_tensors.append(seq)
+
+        input_seqs = torch.stack(seq_tensors)
+
+        item_idxs = [x[1] for x in batch]
+        item_idxs = torch.Tensor(item_idxs, dtype=torch.long)
+
+        return (input_seqs, item_idxs)
 
     def get_dataloader(self,
                        data: dict[User, list[Item]],
                        shuffle: bool=True,
                        split: str='train') -> DataLoader:
         """Create and return a DataLoader. Not considering users in this setting."""
-        item_sequences = list(data.values())
+        dataset = list(data.values())
 
         if split in ['valid', 'test']:
             shuffle = False
+            collate_fn = self.collate_fn_eval
+            pred_item_idxs = []
 
-        import pdb; pdb.set_trace()
+            # Add extra items for training or evaluation.
+            if split == 'valid':
+                for user, items in self.user2items_valid.items():
+                    positive_sample = items[0]
+                    negative_samples = self.positive2negatives[positive_sample]
+                    pred_item_idxs = [positive_sample] + negative_samples
+            elif split == 'test':
+                for user, items in self.user2items_valid.items():
+                    dataset[idx].append(items[0])
 
-        dataloader = DataLoader(dataset=item_sequences,
+                for user, items in self.user2items_test.items():
+                    positive_sample = items[0]
+                    negative_samples = self.positive2negatives[positive_sample]
+                    pred_item_idxs = [positive_sample] + negative_samples
+
+            dataset = (dataset, pred_item_idxs)
+        else:
+            shuffle = True
+            collate_fn = self.collate_fn_train
+
+        dataloader = DataLoader(dataset=dataset,
                                 batch_size=self.batch_size,
                                 shuffle=shuffle,
-                                collate_fn=self.collate_fn)
+                                collate_fn=collate_fn)
         return dataloader
