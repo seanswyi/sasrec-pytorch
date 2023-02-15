@@ -39,11 +39,12 @@ class SASRec(nn.Module):
                 negative_seqs: torch.Tensor=None) -> torch.Tensor:
         input_embs = self.dropout(self.embedding_layer(input_seqs))
         attn_output = self.self_attn_blocks(input_embs)
+        attn_output_last = attn_output[:, -1, :]
 
         if item_idxs is not None:
             item_embs = self.embedding_layer.item_emb_matrix(item_idxs)
-            logits = input_embs @ item_embs.unsqueeze(-1)
-            logits = logits.squeeze(-1)
+            logits = attn_output @ item_embs.transpose(2, 1)
+            logits = logits[:, -1, :]
             outputs = (logits,)
         elif (positive_seqs is not None) and (negative_seqs is not None):
             positive_embs = self.dropout(self.embedding_layer(positive_seqs))
