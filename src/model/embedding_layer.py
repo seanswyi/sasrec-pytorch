@@ -11,10 +11,20 @@ class EmbeddingLayer(nn.Module):
 
         self.item_emb_matrix = nn.Embedding(num_embeddings=num_items + 1,
                                             embedding_dim=hidden_dim)
-        self.positional_emb = nn.Parameter(data=torch.rand(size=(max_seq_len, hidden_dim)))
-        nn.init.normal_(self.positional_emb)
+        self.positional_emb = nn.Embedding(num_embeddings=max_seq_len,
+                                           embedding_dim=hidden_dim)
+
+        self.max_seq_len = max_seq_len
 
     def forward(self, x):
         x = self.item_emb_matrix(x)
-        x += self.positional_emb
+
+        max_seq_len_range = range(max_seq_len)
+        batch_size = x.shape[0]
+        device = x.device.type
+        positions = torch.tile(input=max_seq_len_range, dims=(batch_size, 1)).to(device)
+        positional_embs = self.positional_emb(positions)
+
+        x += positional_embs
+
         return x
