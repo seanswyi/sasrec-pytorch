@@ -93,8 +93,8 @@ class Trainer:
                           'negative_seqs': negative_seqs.to(self.device)}
                 output = self.model(**inputs)
 
-                positive_logits = output[1]
-                negative_logits = output[2]
+                positive_logits = output[0]
+                negative_logits = output[1]
 
                 loss = self.calculate_bce_loss(positive_idxs=positive_idxs,
                                                negative_idxs=negative_idxs,
