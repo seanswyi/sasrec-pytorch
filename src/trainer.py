@@ -150,6 +150,6 @@ class Trainer:
         ndcg /= len(dataloader)
         hit /= len(dataloader)
 
-        print(f"nDCG@10: {ndcg}, Hit@10: {hit}")
+        print(f"nDCG@10: {ndcg: 0.6f}, Hit@10: {hit: 0.6f}")
 
         return ndcg, hit
