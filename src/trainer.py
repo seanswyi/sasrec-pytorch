@@ -107,7 +107,7 @@ class Trainer:
 
                 num_steps += 1
 
-            self.evaluate()
+            ndcg, hit = self.evaluate()
 
             print(f"Epoch {epoch}, loss: {epoch_loss: 0.6f}")
         import pdb; pdb.set_trace()
@@ -117,6 +117,9 @@ class Trainer:
             dataloader = self.valid_dataloader
         else:
             dataloader = self.test_dataloader
+
+        ndcg = 0
+        hit = 0
 
         self.model.eval()
         eval_pbar = tqdm(iterable=dataloader,
@@ -128,7 +131,25 @@ class Trainer:
             inputs = {'input_seqs': input_seqs.to(self.device),
                       'item_idxs': item_idxs.to(self.device)}
             outputs = self.model(**inputs)
-            import pdb; pdb.set_trace()
 
-    def predict(self):
-        pass
+            # We flip the sign because our objective for training was
+            #   to minimize logits, but for evaluation we want the opposite.
+            logits = -outputs[0]
+
+            if logits.device.type == 'mps':
+                logits = logits.detach().cpu()
+
+            ranks = logits.argsort()
+            ranks = [r[0].item() for r in ranks]
+
+            for rank in ranks:
+                if rank < 10:
+                    ndcg += (1 / np.log2(rank + 2))
+                    hit += 1
+
+        ndcg /= len(dataloader)
+        hit /= len(dataloader)
+
+        print(f"nDCG@10: {ndcg}, Hit@10: {hit}")
+
+        return ndcg, hit
