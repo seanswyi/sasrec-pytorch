@@ -41,7 +41,7 @@ class Dataset:
         self.num_users = len(self.user2items)
 
         if self.debug:
-            self.num_items = 52204
+            self.num_items = 57289
         else:
             self.num_items = len(self.item2users)
 
@@ -54,9 +54,6 @@ class Dataset:
         """Load and format data."""
         with open(file=data_filepath) as f:
             user_item_pairs = f.readlines()
-
-        if self.debug:
-            user_item_pairs = user_item_pairs[:10]
 
         user_item_pairs = [pair.strip().split() for pair in user_item_pairs]
         user_item_pairs = [list(map(int, pair)) for pair in user_item_pairs]
@@ -158,38 +155,53 @@ class Dataset:
         input_seqs = torch.stack(seq_tensors)
 
         item_idxs = [x[1] for x in batch]
-        item_idxs = torch.Tensor(item_idxs, dtype=torch.long)
+        item_idxs = torch.tensor(item_idxs, dtype=torch.long)
 
         return (input_seqs, item_idxs)
 
     def get_dataloader(self,
                        data: dict[User, list[Item]],
-                       shuffle: bool=True,
                        split: str='train') -> DataLoader:
-        """Create and return a DataLoader. Not considering users in this setting."""
+        """
+        Create and return a DataLoader. Not considering users in this setting.
+
+        1. If split == 'train':
+             dataset -> list[list[int]]
+        2. Elif split in ['valid', 'test']:
+             dataset -> list[tuple[list[int], int]]
+        """
         dataset = list(data.values())
 
         if split in ['valid', 'test']:
             shuffle = False
             collate_fn = self.collate_fn_eval
-            pred_item_idxs = []
 
-            # Add extra items for training or evaluation.
+            input_seqs = [x[0] for x in dataset if x != []]
+            all_pred_item_idxs = []
+
+            # Get negative samples and append validation to
+            #   input sequence for test phase.
             if split == 'valid':
                 for user, items in self.user2items_valid.items():
-                    positive_sample = items[0]
+                    if items == []:
+                        continue
+
+                    positive_sample = items[1]
                     negative_samples = self.positive2negatives[positive_sample]
                     pred_item_idxs = [positive_sample] + negative_samples
+                    all_pred_item_idxs.append(pred_item_idxs)
             elif split == 'test':
-                for user, items in self.user2items_valid.items():
-                    dataset[idx].append(items[0])
-
                 for user, items in self.user2items_test.items():
-                    positive_sample = items[0]
+                    if items == []:
+                        continue
+
+                    positive_sample = items[1]
                     negative_samples = self.positive2negatives[positive_sample]
                     pred_item_idxs = [positive_sample] + negative_samples
+                    all_pred_item_idxs.append(pred_item_idxs)
 
-            dataset = (dataset, pred_item_idxs)
+            assert len(input_seqs) == len(all_pred_item_idxs)
+            dataset = list(zip(input_seqs, all_pred_item_idxs))
         else:
             shuffle = True
             collate_fn = self.collate_fn_train
