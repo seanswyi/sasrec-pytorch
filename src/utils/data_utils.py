@@ -40,7 +40,7 @@ def get_positive2negatives(num_items: int,
                                             size=(num_samples,),
                                             replace=False)
 
-        positive2negatives[positive_sample] = negative_samples
+        positive2negatives[positive_sample] = negative_samples.tolist()
 
     return positive2negatives
 
