@@ -34,22 +34,25 @@ class SASRec(nn.Module):
 
     def forward(self,
                 input_seqs: torch.Tensor,
+                item_idxs: torch.Tensor=None,
                 positive_seqs: torch.Tensor=None,
                 negative_seqs: torch.Tensor=None) -> torch.Tensor:
-        input_emb = self.dropout(self.embedding_layer(input_seqs))
-        input_attn = self.self_attn_blocks(input_emb)
-        output_logits = self.classifier(input_attn)
+        input_embs = self.dropout(self.embedding_layer(input_seqs))
+        attn_output = self.self_attn_blocks(input_embs)
 
-        outputs = (output_logits,)
+        if item_idxs is not None:
+            item_embs = self.embedding_layer.item_emb_matrix(item_idxs)
+            logits = input_embs @ item_embs.unsqueeze(-1)
+            logits = logits.squeeze(-1)
+            outputs = (logits,)
+        elif (positive_seqs is not None) and (negative_seqs is not None):
+            positive_embs = self.dropout(self.embedding_layer(positive_seqs))
+            negative_embs = self.dropout(self.embedding_layer(negative_seqs))
 
-        if (positive_seqs is not None) and (negative_seqs is not None):
-            positive_emb = self.dropout(self.embedding_layer(positive_seqs))
-            negative_emb = self.dropout(self.embedding_layer(negative_seqs))
+            positive_logits = attn_output * positive_embs
+            negative_logits = attn_output * negative_embs
 
-            positive_logits = input_attn * positive_emb
-            negative_logits = input_attn * negative_emb
-
-            outputs += (positive_logits,)
+            outputs = (positive_logits,)
             outputs += (negative_logits,)
 
         return outputs
