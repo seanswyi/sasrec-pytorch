@@ -27,8 +27,8 @@ class Trainer:
         self.test_data = dataset.user2items_test
 
         self.train_dataloader = dataset.get_dataloader(data=self.train_data)
-        self.valid_dataloader = dataset.get_dataloader(data=self.valid_data, shuffle=False)
-        self.test_dataloader = dataset.get_dataloader(data=self.test_data, shuffle=False)
+        self.valid_dataloader = dataset.get_dataloader(data=self.valid_data, split='valid')
+        self.test_dataloader = dataset.get_dataloader(data=self.test_data, split='test')
 
         self.positive2negatives = dataset.positive2negatives
 
@@ -71,7 +71,6 @@ class Trainer:
                             total=self.num_epochs)
         for epoch in epoch_pbar:
             self.model.train()
-            self.model.zero_grad()
 
             epoch_loss = 0
 
@@ -79,7 +78,7 @@ class Trainer:
                               desc="Training",
                               total=len(self.train_dataloader))
             for batch in train_pbar:
-                self.optimizer.zero_grad()
+                self.model.zero_grad()
 
                 positive_seqs = batch.clone()
                 positive_idxs = torch.where(positive_seqs != 0)
@@ -93,7 +92,6 @@ class Trainer:
                           'positive_seqs': positive_seqs.to(self.device),
                           'negative_seqs': negative_seqs.to(self.device)}
                 output = self.model(**inputs)
-                assert len(output) == 3, f"Wrong number of outputs ({len(output)})"
 
                 positive_logits = output[1]
                 negative_logits = output[2]
@@ -109,12 +107,28 @@ class Trainer:
 
                 num_steps += 1
 
+            self.evaluate()
+
             print(f"Epoch {epoch}, loss: {epoch_loss: 0.6f}")
         import pdb; pdb.set_trace()
 
+    def evaluate(self, mode='valid'):
+        if mode == 'valid':
+            dataloader = self.valid_dataloader
+        else:
+            dataloader = self.test_dataloader
 
-    def evaluate(self):
-        pass
+        self.model.eval()
+        eval_pbar = tqdm(iterable=dataloader,
+                         desc=f"Evaluating for {mode}",
+                         total=len(dataloader))
+        for batch in eval_pbar:
+            input_seqs, item_idxs = batch
+
+            inputs = {'input_seqs': input_seqs.to(self.device),
+                      'item_idxs': item_idxs.to(self.device)}
+            outputs = self.model(**inputs)
+            import pdb; pdb.set_trace()
 
     def predict(self):
         pass
