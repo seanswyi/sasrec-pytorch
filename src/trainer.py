@@ -27,6 +27,7 @@ class Trainer:
         self.test_data = dataset.user2items_test
 
         self.train_dataloader = dataset.get_dataloader(data=self.train_data)
+        # self.valid_dataloader = dataset.get_dataloader(data=self.train_data, split='valid')
         self.valid_dataloader = dataset.get_dataloader(data=self.valid_data, split='valid')
         self.test_dataloader = dataset.get_dataloader(data=self.test_data, split='test')
 
@@ -120,6 +121,7 @@ class Trainer:
 
         ndcg = 0
         hit = 0
+        num_users = 0
 
         self.model.eval()
         eval_pbar = tqdm(iterable=dataloader,
@@ -127,19 +129,18 @@ class Trainer:
                          total=len(dataloader))
         for batch in eval_pbar:
             input_seqs, item_idxs = batch
+            num_users += input_seqs.shape[0]
 
             inputs = {'input_seqs': input_seqs.to(self.device),
                       'item_idxs': item_idxs.to(self.device)}
             outputs = self.model(**inputs)
 
-            # We flip the sign because our objective for training was
-            #   to minimize logits, but for evaluation we want the opposite.
             logits = -outputs[0]
 
             if logits.device.type == 'mps':
                 logits = logits.detach().cpu()
 
-            ranks = logits.argsort()
+            ranks = logits.argsort().argsort()
             ranks = [r[0].item() for r in ranks]
 
             for rank in ranks:
@@ -147,9 +148,9 @@ class Trainer:
                     ndcg += (1 / np.log2(rank + 2))
                     hit += 1
 
-        ndcg /= len(dataloader)
-        hit /= len(dataloader)
+        ndcg /= num_users
+        hit /= num_users
 
-        print(f"nDCG@10: {ndcg: 0.6f}, Hit@10: {hit: 0.6f}")
+        print(f"\nnDCG@10: {ndcg: 0.6f}, Hit@10: {hit: 0.6f}\n")
 
         return ndcg, hit
