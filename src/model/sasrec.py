@@ -38,10 +38,15 @@ class SASRec(nn.Module):
                 positive_seqs: torch.Tensor=None,
                 negative_seqs: torch.Tensor=None) -> torch.Tensor:
         input_embs = self.dropout(self.embedding_layer(input_seqs))
-        attn_output = self.self_attn_blocks(input_embs)
-        attn_output_last = attn_output[:, -1, :]
 
-        if item_idxs is not None:
+        is_padding = torch.tensor(input_seqs == 0, dtype=torch.bool)
+        padding_mask = ~is_padding
+        input_embs *= padding_mask.unsqueeze(-1)
+
+        attn_output = self.self_attn_blocks(input_embs)
+        attn_output *= padding_mask.unsqueeze(-1)
+
+        if item_idxs is not None: # Inference
             item_embs = self.embedding_layer.item_emb_matrix(item_idxs)
             logits = attn_output @ item_embs.transpose(2, 1)
             logits = logits[:, -1, :]
@@ -50,8 +55,8 @@ class SASRec(nn.Module):
             positive_embs = self.dropout(self.embedding_layer(positive_seqs))
             negative_embs = self.dropout(self.embedding_layer(negative_seqs))
 
-            positive_logits = attn_output * positive_embs
-            negative_logits = attn_output * negative_embs
+            positive_logits = (attn_output * positive_embs).sum(dim=-1)
+            negative_logits = (attn_output * negative_embs).sum(dim=-1)
 
             outputs = (positive_logits,)
             outputs += (negative_logits,)
