@@ -66,6 +66,11 @@ class Trainer:
         return positive_loss + negative_loss
 
     def train(self) -> None:
+        best_ndcg = 0
+        best_hit_rate = 0
+        best_ndcg_epoch = 0
+        best_hit_epoch = 0
+
         num_steps = 0
         epoch_pbar = trange(self.num_epochs,
                             desc="Epochs: ",
@@ -74,11 +79,13 @@ class Trainer:
             self.model.train()
 
             epoch_loss = 0
+            loss_func = nn.BCEWithLogitsLoss()
 
-            train_pbar = tqdm(iterable=self.train_dataloader,
-                              desc="Training",
-                              total=len(self.train_dataloader))
-            for batch in train_pbar:
+            # train_pbar = tqdm(iterable=self.train_dataloader,
+            #                   desc="Training",
+            #                   total=len(self.train_dataloader))
+            # for batch in train_pbar:
+            for batch in self.train_dataloader:
                 self.model.zero_grad()
 
                 positive_seqs = batch.clone()
@@ -110,8 +117,17 @@ class Trainer:
 
             ndcg, hit = self.evaluate()
 
+            if ndcg >= best_ndcg:
+                best_ndcg = ndcg
+                best_ndcg_epoch = epoch
+
+            if hit >= best_hit_rate:
+                best_hit_rate = hit
+                best_hit_epoch = epoch
+
             print(f"Epoch {epoch}, loss: {epoch_loss: 0.6f}")
-        import pdb; pdb.set_trace()
+
+        return best_ndcg, best_ndcg_epoch, best_hit_rate, best_hit_epoch
 
     def evaluate(self, mode='valid'):
         if mode == 'valid':
@@ -124,10 +140,11 @@ class Trainer:
         num_users = 0
 
         self.model.eval()
-        eval_pbar = tqdm(iterable=dataloader,
-                         desc=f"Evaluating for {mode}",
-                         total=len(dataloader))
-        for batch in eval_pbar:
+        # eval_pbar = tqdm(iterable=dataloader,
+        #                  desc=f"Evaluating for {mode}",
+        #                  total=len(dataloader))
+        # for batch in eval_pbar:
+        for batch in dataloader:
             input_seqs, item_idxs = batch
             num_users += input_seqs.shape[0]
 
@@ -135,18 +152,31 @@ class Trainer:
                       'item_idxs': item_idxs.to(self.device)}
             outputs = self.model(**inputs)
 
+            # inputs = {'log_seqs': input_seqs.to(self.device),
+            #           'item_indices': item_idxs.to(self.device)}
+            # outputs = self.model.predict(**inputs)
+
             logits = -outputs[0]
 
             if logits.device.type == 'mps':
                 logits = logits.detach().cpu()
 
             ranks = logits.argsort().argsort()
+
+            # rank = ranks[0].item()
+            # if rank < 10:
+            #     ndcg += (1 / np.log2(rank + 2))
+            #     hit += 1
+            # import pdb; pdb.set_trace()
+
+            # MINE. #############################
             ranks = [r[0].item() for r in ranks]
 
             for rank in ranks:
                 if rank < 10:
                     ndcg += (1 / np.log2(rank + 2))
                     hit += 1
+            #####################################
 
         ndcg /= num_users
         hit /= num_users

@@ -52,7 +52,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--num_blocks',
-        default=1,
+        default=2,
         help="Number of self-attention -> FFNN blocks to stack."
     )
     parser.add_argument(
@@ -66,6 +66,11 @@ def get_args() -> argparse.Namespace:
         action='store_true',
         default=False,
         help="Whether or not to use item matrix for prediction layer."
+    )
+    parser.add_argument(
+        '--seans_self_attn',
+        action='store_true',
+        default=False
     )
 
     # Optimizer arguments.
@@ -109,7 +114,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--num_epochs',
-        default=10,
+        default=200,
         type=int,
         help="Number of epochs to train the model."
     )
@@ -149,6 +154,8 @@ class ModelArgs:
         self.hidden_dim = args.hidden_dim
         self.dropout_p = args.dropout_p
         self.share_item_emb = args.share_item_emb
+
+        self.seans_self_attn = args.seans_self_attn
 
 
 class OptimizerArgs:
