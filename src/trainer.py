@@ -18,6 +18,7 @@ class Trainer:
                  max_lr: float,
                  num_epochs: int,
                  warmup_ratio: float,
+                 use_scheduler: bool,
                  scheduler_type: str,
                  device: str) -> None:
         self.device = device
@@ -27,7 +28,6 @@ class Trainer:
         self.test_data = dataset.user2items_test
 
         self.train_dataloader = dataset.get_dataloader(data=self.train_data)
-        # self.valid_dataloader = dataset.get_dataloader(data=self.train_data, split='valid')
         self.valid_dataloader = dataset.get_dataloader(data=self.valid_data, split='valid')
         self.test_dataloader = dataset.get_dataloader(data=self.test_data, split='test')
 
@@ -40,12 +40,15 @@ class Trainer:
 
         self.model = model
         self.optimizer = optimizer
-        self.scheduler = get_scheduler(optimizer=optimizer,
-                                       scheduler_type=scheduler_type,
-                                       max_lr=max_lr,
-                                       num_batches=len(self.train_dataloader),
-                                       num_epochs=num_epochs,
-                                       warmup_ratio=warmup_ratio)
+
+        self.use_scheduler = use_scheduler
+        if self.use_scheduler:
+            self.scheduler = get_scheduler(optimizer=optimizer,
+                                           scheduler_type=scheduler_type,
+                                           max_lr=max_lr,
+                                           num_batches=len(self.train_dataloader),
+                                           num_epochs=num_epochs,
+                                           warmup_ratio=warmup_ratio)
 
     def calculate_bce_loss(self,
                            positive_idxs: torch.Tensor,
@@ -81,11 +84,10 @@ class Trainer:
             epoch_loss = 0
             loss_func = nn.BCEWithLogitsLoss()
 
-            # train_pbar = tqdm(iterable=self.train_dataloader,
-            #                   desc="Training",
-            #                   total=len(self.train_dataloader))
-            # for batch in train_pbar:
-            for batch in self.train_dataloader:
+            train_pbar = tqdm(iterable=self.train_dataloader,
+                              desc="Training",
+                              total=len(self.train_dataloader))
+            for batch in train_pbar:
                 self.model.zero_grad()
 
                 positive_seqs = batch.clone()
@@ -111,7 +113,9 @@ class Trainer:
                 loss.backward()
                 epoch_loss += loss.item()
                 self.optimizer.step()
-                self.scheduler.step()
+
+                if self.use_scheduler:
+                    self.scheduler.step()
 
                 num_steps += 1
 
@@ -140,11 +144,10 @@ class Trainer:
         num_users = 0
 
         self.model.eval()
-        # eval_pbar = tqdm(iterable=dataloader,
-        #                  desc=f"Evaluating for {mode}",
-        #                  total=len(dataloader))
-        # for batch in eval_pbar:
-        for batch in dataloader:
+        eval_pbar = tqdm(iterable=dataloader,
+                         desc=f"Evaluating for {mode}",
+                         total=len(dataloader))
+        for batch in eval_pbar:
             input_seqs, item_idxs = batch
             num_users += input_seqs.shape[0]
 
@@ -152,31 +155,18 @@ class Trainer:
                       'item_idxs': item_idxs.to(self.device)}
             outputs = self.model(**inputs)
 
-            # inputs = {'log_seqs': input_seqs.to(self.device),
-            #           'item_indices': item_idxs.to(self.device)}
-            # outputs = self.model.predict(**inputs)
-
             logits = -outputs[0]
 
-            if logits.device.type == 'mps':
+            if logits.device.type == 'mps': # torch.argsort isn't implemented for MPS.
                 logits = logits.detach().cpu()
 
             ranks = logits.argsort().argsort()
-
-            # rank = ranks[0].item()
-            # if rank < 10:
-            #     ndcg += (1 / np.log2(rank + 2))
-            #     hit += 1
-            # import pdb; pdb.set_trace()
-
-            # MINE. #############################
             ranks = [r[0].item() for r in ranks]
 
             for rank in ranks:
                 if rank < 10:
                     ndcg += (1 / np.log2(rank + 2))
                     hit += 1
-            #####################################
 
         ndcg /= num_users
         hit /= num_users
