@@ -67,11 +67,6 @@ def get_args() -> argparse.Namespace:
         default=False,
         help="Whether or not to use item matrix for prediction layer."
     )
-    parser.add_argument(
-        '--seans_self_attn',
-        action='store_true',
-        default=False
-    )
 
     # Optimizer arguments.
     parser.add_argument(
@@ -114,9 +109,15 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--num_epochs',
-        default=200,
+        default=2000,
         type=int,
         help="Number of epochs to train the model."
+    )
+    parser.add_argument(
+        '--use_scheduler',
+        action='store_true',
+        default=False,
+        help="Using the scheduler doesn't always help."
     )
     parser.add_argument(
         '--warmup_ratio',
@@ -148,6 +149,7 @@ class DatasetArgs:
 
 class ModelArgs:
     def __init__(self, args: argparse.Namespace) -> None:
+        self.device = args.device
         self.num_items = args.num_items
         self.num_blocks = args.num_blocks
         self.max_seq_len = args.max_seq_len
