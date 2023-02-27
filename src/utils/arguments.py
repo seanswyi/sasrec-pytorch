@@ -157,8 +157,6 @@ class ModelArgs:
         self.dropout_p = args.dropout_p
         self.share_item_emb = args.share_item_emb
 
-        self.seans_self_attn = args.seans_self_attn
-
 
 class OptimizerArgs:
     def __init__(self, args: argparse.Namespace) -> None:
@@ -173,5 +171,6 @@ class TrainerArgs:
         self.device = args.device
         self.max_lr = args.lr
         self.num_epochs = args.num_epochs
+        self.use_scheduler = args.use_scheduler
         self.warmup_ratio = args.warmup_ratio
         self.scheduler_type = args.scheduler_type
