@@ -10,6 +10,7 @@ from dataset import Dataset
 from model import SASRec
 from utils import get_negative_samples, get_scheduler
 
+
 class Trainer:
     def __init__(self,
                  dataset: Dataset,
