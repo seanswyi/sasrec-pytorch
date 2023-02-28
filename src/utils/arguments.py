@@ -32,7 +32,7 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--data_filename',
-        default='amazon-beauty.txt',
+        default='amazon_beauty.txt',
         type=str,
         choices=['amazon_beauty.txt',
                  'amazon_games.txt',
