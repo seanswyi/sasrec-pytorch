@@ -16,16 +16,7 @@ class SelfAttnBlock(nn.Module):
         self.layer_norm = nn.LayerNorm(normalized_shape=hidden_dim)
         self.dropout = nn.Dropout(p=dropout_p)
 
-        self.seans_self_attn = seans_self_attn
-
-        if self.seans_self_attn:
-            self.self_attn = SelfAttn(hidden_dim=hidden_dim)
-        else:
-            self.self_attn = nn.MultiheadAttention(embed_dim=hidden_dim,
-                                                   num_heads=1,
-                                                   dropout=dropout_p,
-                                                   batch_first=True)
-
+        self.self_attn = SelfAttn(hidden_dim=hidden_dim)
         self.ffnn = PointWiseFFNN(hidden_dim=hidden_dim)
 
         self.attn_mask = self.get_attn_mask(seq_len=max_seq_len)
@@ -34,6 +25,7 @@ class SelfAttnBlock(nn.Module):
     def dropout_layernorm(self, x: torch.Tensor) -> torch.Tensor:
         layer_norm_output = self.layer_norm(x)
         dropout_output = self.dropout(layer_norm_output)
+
         return dropout_output
 
     def forward(self,
