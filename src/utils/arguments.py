@@ -106,6 +106,12 @@ def get_args() -> argparse.Namespace:
         help="Device to use."
     )
     parser.add_argument(
+        '--evaluate_k',
+        default=10,
+        type=int,
+        help="nDCG@k, Hit@k, etc."
+    )
+    parser.add_argument(
         '--num_epochs',
         default=2000,
         type=int,
@@ -167,6 +173,7 @@ class OptimizerArgs:
 class TrainerArgs:
     def __init__(self, args: argparse.Namespace) -> None:
         self.device = args.device
+        self.evaluate_k = args.evaluate_k
         self.max_lr = args.lr
         self.num_epochs = args.num_epochs
         self.use_scheduler = args.use_scheduler
