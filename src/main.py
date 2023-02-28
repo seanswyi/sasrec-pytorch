@@ -26,24 +26,28 @@ def main() -> None:
     args = get_args()
     args.device = get_device()
 
+    # Get timestamp.
     time_right_now = time.time()
     timestamp = datetime.fromtimestamp(timestamp=time_right_now).strftime(format='%m-%d-%Y-%H%M')
     args.timestamp = timestamp
 
-    log_filename = f"sasrec_lr-{args.learning_rate}_batch-size-{args.batch_size}\
-        _num-epochs-{args.num_epochs}.log"
+    # Get log file information.
+    data_name = args.data_filename.split('.txt')[0]
+    log_filename = f"sasrec-{data_name}_lr-{args.learning_rate}_batch-size-{args.batch_size}\
+        _num-epochs-{args.num_epochs}_{timestamp}.log"
     args.log_filename = log_filename
     if not os.path.exists('../logs'):
         os.makedirs('../logs', exist_ok=True)
     args.log_filename = os.path.join('../logs', args.log_filename)
 
+    # Logging basic configuration.
     log_msg_format = '[%(asctime)s - %(levelname)s - %(filename)s: %(lineno)d] %(message)s'
     handlers = [logging.FileHandler(filename=args.log_filename), logging.StreamHandler()]
     logging.basicConfig(format=log_msg_format,
                         level=logging.INFO,
                         handlers=handlers)
 
-    logger.info("Starting main process...")
+    logger.info(f"Starting main process with {data_name}...")
 
     if args.debug:
         args.num_epochs = 1
@@ -65,10 +69,8 @@ def main() -> None:
                       model=model,
                       optimizer=optimizer,
                       **vars(trainer_args))
-    bn, bne, bh, bhe = trainer.train()
 
-    print(f"Best nDCG@10 was {bn} at epoch {bne + 1}")
-    print(f"Best Hit@10 was {bh} at epoch {bhe + 1}")
+    best_model_state_dict = trainer.train()
 
 
 if __name__ == '__main__':
