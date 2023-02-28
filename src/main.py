@@ -33,7 +33,7 @@ def main() -> None:
 
     # Get log file information.
     data_name = args.data_filename.split('.txt')[0]
-    log_filename = f"sasrec-{data_name}_lr-{args.learning_rate}_batch-size-{args.batch_size}\
+    log_filename = f"sasrec-{data_name}_lr-{args.lr}_batch-size-{args.batch_size}\
         _num-epochs-{args.num_epochs}_{timestamp}.log"
     args.log_filename = log_filename
     if not os.path.exists('../logs'):
