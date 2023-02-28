@@ -143,8 +143,7 @@ def get_args() -> argparse.Namespace:
 class DatasetArgs:
     def __init__(self, args: argparse.Namespace) -> None:
         args.data_root = os.path.expanduser(path=args.data_root)
-        self.data_root = os.path.join(args.data_root, args.data_name)
-        self.data_filepath = os.path.join(self.data_root, args.data_filename)
+        self.data_filepath = os.path.join(args.data_root, args.data_filename)
 
         self.batch_size = args.batch_size
         self.max_seq_len = args.max_seq_len
