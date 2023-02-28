@@ -26,20 +26,18 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--data_root',
-        default='~/projects/datasets',
+        default='../data',
         type=str,
         help="Root directory containing _all_ datasets."
     )
     parser.add_argument(
-        '--data_name',
-        default='amazon',
-        type=str,
-        help="Specific type of dataset we want to use."
-    )
-    parser.add_argument(
         '--data_filename',
-        default='amazon_beauty.txt',
+        default='amazon-beauty.txt',
         type=str,
+        choices=['amazon-beauty.txt',
+                 'amazon-games.txt',
+                 'steam.txt',
+                 'movie-lens_1m.txt'],
         help="Name of data file."
     )
 
