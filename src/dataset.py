@@ -22,16 +22,13 @@ class Dataset:
     def __init__(self,
                  batch_size: int,
                  max_seq_len: int,
-                 data_root: str,
                  data_filepath: str,
                  debug: bool):
         self.debug = debug
         self.batch_size = batch_size
         self.max_seq_len = max_seq_len
 
-        self.data_root = data_root
         self.data_filepath = data_filepath
-
         self.data = self.load_data(data_filepath=self.data_filepath)
 
         if self.debug:
