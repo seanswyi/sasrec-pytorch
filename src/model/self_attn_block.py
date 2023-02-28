@@ -19,9 +19,6 @@ class SelfAttnBlock(nn.Module):
         self.self_attn = SelfAttn(hidden_dim=hidden_dim)
         self.ffnn = PointWiseFFNN(hidden_dim=hidden_dim)
 
-        self.attn_mask = self.get_attn_mask(seq_len=max_seq_len)
-        self.attn_mask = self.attn_mask.to(device)
-
     def dropout_layernorm(self, x: torch.Tensor) -> torch.Tensor:
         layer_norm_output = self.layer_norm(x)
         dropout_output = self.dropout(layer_norm_output)
