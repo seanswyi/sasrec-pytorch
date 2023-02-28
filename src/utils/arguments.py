@@ -34,8 +34,8 @@ def get_args() -> argparse.Namespace:
         '--data_filename',
         default='amazon-beauty.txt',
         type=str,
-        choices=['amazon-beauty.txt',
-                 'amazon-games.txt',
+        choices=['amazon_beauty.txt',
+                 'amazon_games.txt',
                  'steam.txt',
                  'movie-lens_1m.txt'],
         help="Name of data file."
