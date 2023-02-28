@@ -1,6 +1,7 @@
 import argparse
 from collections import OrderedDict
 import copy
+import logging
 
 import numpy as np
 import torch
@@ -17,9 +18,13 @@ from utils import get_negative_samples, get_scheduler
 BestModelStateDict = OrderedDict[str, torch.Tensor]
 
 
+logger = logging.getLogger()
+
+
 class Trainer:
     def __init__(self,
                  dataset: Dataset,
+                 evaluate_k: int,
                  model: SASRec,
                  optimizer: Optimizer,
                  max_lr: float,
@@ -29,6 +34,7 @@ class Trainer:
                  scheduler_type: str,
                  device: str) -> None:
         self.device = device
+        self.evaluate_k = evaluate_k
 
         self.train_data = dataset.user2items_train
         self.valid_data = dataset.user2items_valid
@@ -80,7 +86,7 @@ class Trainer:
         best_hit_rate = 0
         best_ndcg_epoch = 0
         best_hit_epoch = 0
-        best_model = None
+        best_model_state_dict = None
 
         num_steps = 0
         epoch_pbar = trange(self.num_epochs,
@@ -132,13 +138,17 @@ class Trainer:
             if ndcg >= best_ndcg:
                 best_ndcg = ndcg
                 best_ndcg_epoch = epoch
-                best_model = copy.deepcopy(x=self.model.state_dict())
+                best_model_state_dict = copy.deepcopy(x=self.model.state_dict())
 
             if hit >= best_hit_rate:
                 best_hit_rate = hit
                 best_hit_epoch = epoch
 
-            print(f"Epoch {epoch}, loss: {epoch_loss: 0.6f}")
+            epoch_result_msg = f"Epoch {epoch},\
+                                 loss: {epoch_loss: 0.6f},\
+                                 nDCG@{self.evaluate_k}: {ndcg: 0.4f},\
+                                 Hit@{self.evaluate_k}: {hit: 0.4f}"
+            logger.info(epoch_result_msg)
 
         return best_model
 
@@ -173,13 +183,11 @@ class Trainer:
             ranks = [r[0].item() for r in ranks]
 
             for rank in ranks:
-                if rank < 10:
+                if rank < self.evaluate_k:
                     ndcg += (1 / np.log2(rank + 2))
                     hit += 1
 
         ndcg /= num_users
         hit /= num_users
-
-        print(f"\nnDCG@10: {ndcg: 0.6f}, Hit@10: {hit: 0.6f}\n")
 
         return ndcg, hit
