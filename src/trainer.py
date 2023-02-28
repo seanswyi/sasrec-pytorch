@@ -1,4 +1,6 @@
 import argparse
+from collections import OrderedDict
+import copy
 
 import numpy as np
 import torch
@@ -9,6 +11,10 @@ from tqdm import tqdm, trange
 from dataset import Dataset
 from model import SASRec
 from utils import get_negative_samples, get_scheduler
+
+
+# Type aliases.
+BestModelStateDict = OrderedDict[str, torch.Tensor]
 
 
 class Trainer:
@@ -69,11 +75,12 @@ class Trainer:
 
         return positive_loss + negative_loss
 
-    def train(self) -> None:
+    def train(self) -> BestModelStateDict:
         best_ndcg = 0
         best_hit_rate = 0
         best_ndcg_epoch = 0
         best_hit_epoch = 0
+        best_model = None
 
         num_steps = 0
         epoch_pbar = trange(self.num_epochs,
@@ -125,6 +132,7 @@ class Trainer:
             if ndcg >= best_ndcg:
                 best_ndcg = ndcg
                 best_ndcg_epoch = epoch
+                best_model = copy.deepcopy(x=self.model.state_dict())
 
             if hit >= best_hit_rate:
                 best_hit_rate = hit
@@ -132,7 +140,7 @@ class Trainer:
 
             print(f"Epoch {epoch}, loss: {epoch_loss: 0.6f}")
 
-        return best_ndcg, best_ndcg_epoch, best_hit_rate, best_hit_epoch
+        return best_model
 
     def evaluate(self, mode='valid'):
         if mode == 'valid':
