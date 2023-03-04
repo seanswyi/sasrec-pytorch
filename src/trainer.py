@@ -87,6 +87,7 @@ class Trainer:
         best_ndcg_epoch = 0
         best_hit_epoch = 0
         best_model_state_dict = None
+        best_optim_state_dict = None
 
         num_steps = 0
         epoch_pbar = trange(self.num_epochs,
@@ -139,6 +140,7 @@ class Trainer:
                 best_ndcg = ndcg
                 best_ndcg_epoch = epoch
                 best_model_state_dict = copy.deepcopy(x=self.model.state_dict())
+                best_optim_state_dict = copy.deepcopy(x=self.optimizer.state_dict())
 
             if hit >= best_hit_rate:
                 best_hit_rate = hit
@@ -150,7 +152,12 @@ class Trainer:
                         Hit@{self.evaluate_k}: {hit: 0.4f}"
             logger.info(epoch_result_msg)
 
-        return best_model
+        best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
+        best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit: 0.6f} at epoch {best_hit_epoch}."
+        best_results_msg = '\n'.join([best_ndcg_msg, best_hit_msg])
+        logger.info(f"Best results:\n{best_results_msg}")
+
+        return (best_ndcg_epoch, best_model_state_dict, best_optim_state_dict)
 
     def evaluate(self, mode='valid'):
         if mode == 'valid':
