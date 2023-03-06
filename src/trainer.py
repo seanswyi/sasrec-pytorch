@@ -170,29 +170,31 @@ class Trainer:
         num_users = 0
 
         self.model.eval()
-        eval_pbar = tqdm(iterable=dataloader,
-                         desc=f"Evaluating for {mode}",
-                         total=len(dataloader))
-        for batch in eval_pbar:
-            input_seqs, item_idxs = batch
-            num_users += input_seqs.shape[0]
 
-            inputs = {'input_seqs': input_seqs.to(self.device),
-                      'item_idxs': item_idxs.to(self.device)}
-            outputs = self.model(**inputs)
+        with torch.no_grad():
+            eval_pbar = tqdm(iterable=dataloader,
+                            desc=f"Evaluating for {mode}",
+                            total=len(dataloader))
+            for batch in eval_pbar:
+                input_seqs, item_idxs = batch
+                num_users += input_seqs.shape[0]
 
-            logits = -outputs[0]
+                inputs = {'input_seqs': input_seqs.to(self.device),
+                        'item_idxs': item_idxs.to(self.device)}
+                outputs = self.model(**inputs)
 
-            if logits.device.type == 'mps': # torch.argsort isn't implemented for MPS.
-                logits = logits.detach().cpu()
+                logits = -outputs[0]
 
-            ranks = logits.argsort().argsort()
-            ranks = [r[0].item() for r in ranks]
+                if logits.device.type == 'mps': # torch.argsort isn't implemented for MPS.
+                    logits = logits.detach().cpu()
 
-            for rank in ranks:
-                if rank < self.evaluate_k:
-                    ndcg += (1 / np.log2(rank + 2))
-                    hit += 1
+                ranks = logits.argsort().argsort()
+                ranks = [r[0].item() for r in ranks]
+
+                for rank in ranks:
+                    if rank < self.evaluate_k:
+                        ndcg += (1 / np.log2(rank + 2))
+                        hit += 1
 
         ndcg /= num_users
         hit /= num_users
