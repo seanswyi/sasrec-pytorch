@@ -2,6 +2,7 @@ import argparse
 from collections import OrderedDict
 import copy
 import logging
+import os
 
 import numpy as np
 import torch
@@ -12,10 +13,6 @@ from tqdm import tqdm, trange
 from dataset import Dataset
 from model import SASRec
 from utils import get_negative_samples, get_scheduler
-
-
-# Type aliases.
-BestModelStateDict = OrderedDict[str, torch.Tensor]
 
 
 logger = logging.getLogger()
@@ -32,9 +29,16 @@ class Trainer:
                  warmup_ratio: float,
                  use_scheduler: bool,
                  scheduler_type: str,
-                 device: str) -> None:
+                 output_dir: str,
+                 save_dir: str,
+                 resume_training: bool=False,
+                 device: str='cpu') -> None:
         self.device = device
         self.evaluate_k = evaluate_k
+        self.save_dir = os.path.join(output_dir, save_dir)
+
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir, exist_ok=True)
 
         self.train_data = dataset.user2items_train
         self.valid_data = dataset.user2items_valid
@@ -62,6 +66,25 @@ class Trainer:
                                            num_batches=len(self.train_dataloader),
                                            num_epochs=num_epochs,
                                            warmup_ratio=warmup_ratio)
+        else:
+            self.scheduler = None
+
+        self.resume_training = resume_training
+        if self.resume_training:
+            checkpoint_file = os.path.join(self.save_dir, 'most_recent_checkpoint.pt')
+            checkpoint = torch.load(f=checkpoint_file)
+
+            most_recent_epoch = checkpoint['most_recent_epoch']
+            most_recent_model = checkpoint['most_recent_model_state_dict']
+            most_recent_optimizer = checkpoint['most_recent_optim_state_dict']
+            most_recent_scheduler = checkpoint['most_recent_scheduler_state_dict']
+
+            self.model.load_state_dict(most_recent_model)
+            self.optimizer.load_state_dict(most_recent_optimizer)
+            self.num_epochs = num_epochs - most_recent_epoch
+
+            if self.scheduler:
+                self.scheduler.load_state_dict(most_recent_scheduler)
 
     def calculate_bce_loss(self,
                            positive_idxs: torch.Tensor,
@@ -81,14 +104,33 @@ class Trainer:
 
         return positive_loss + negative_loss
 
-    def train(self) -> BestModelStateDict:
+    def save_results(self,
+                     epoch: int,
+                     ndcg: float,
+                     model_state_dict: OrderedDict[str, torch.Tensor],
+                     optim_state_dict: OrderedDict[str, torch.Tensor],
+                     scheduler_state_dict: OrderedDict[str, torch.Tensor]=None,
+                     save_name: str='best') -> None:
+        checkpoint = {f'{save_name}_epoch': epoch,
+                      f'{save_name}_ndcg': ndcg,
+                      f'{save_name}_model_state_dict': model_state_dict,
+                      f'{save_name}_optim_state_dict': optim_state_dict,
+                      f'{save_name}_scheduler_state_dict': scheduler_state_dict}
+        save_dir = os.path.join(self.save_dir, f'{save_name}_checkpoint.pt')
+        torch.save(obj=checkpoint, f=save_dir)
+
+    def train(self) -> (int,
+                        OrderedDict[str, torch.Tensor],
+                        OrderedDict[str, torch.Tensor]):
         best_ndcg = 0
         best_hit_rate = 0
         best_ndcg_epoch = 0
         best_hit_epoch = 0
         best_model_state_dict = None
         best_optim_state_dict = None
+        best_scheduler_state_dict = None
 
+        last_epoch = 0
         num_steps = 0
         epoch_pbar = trange(self.num_epochs,
                             desc="Epochs: ",
@@ -142,6 +184,12 @@ class Trainer:
                 best_model_state_dict = copy.deepcopy(x=self.model.state_dict())
                 best_optim_state_dict = copy.deepcopy(x=self.optimizer.state_dict())
 
+                self.save_results(epoch=best_ndcg_epoch,
+                                  ndcg=best_ndcg,
+                                  model_state_dict=best_model_state_dict,
+                                  optim_state_dict=best_optim_state_dict,
+                                  scheduler_state_dict=best_scheduler_state_dict)
+
             if hit >= best_hit_rate:
                 best_hit_rate = hit
                 best_hit_epoch = epoch
@@ -152,8 +200,22 @@ class Trainer:
                         Hit@{self.evaluate_k}: {hit: 0.4f}"
             logger.info(epoch_result_msg)
 
+            most_recent_model = self.model.state_dict()
+            most_recent_optim = self.optimizer.state_dict()
+            most_recent_scheduler = None
+
+            if self.use_scheduler:
+                most_recent_scheduler = self.scheduler.state_dict()
+
+            self.save_results(epoch=epoch,
+                              ndcg=best_ndcg,
+                              model_state_dict=most_recent_model,
+                              optim_state_dict=most_recent_optim,
+                              scheduler_state_dict=most_recent_scheduler,
+                              save_name='most_recent')
+
         best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
-        best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit: 0.6f} at epoch {best_hit_epoch}."
+        best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} at epoch {best_hit_epoch}."
         best_results_msg = '\n'.join([best_ndcg_msg, best_hit_msg])
         logger.info(f"Best results:\n{best_results_msg}")
 
@@ -176,14 +238,14 @@ class Trainer:
 
         with torch.no_grad():
             eval_pbar = tqdm(iterable=dataloader,
-                            desc=f"Evaluating for {mode}",
-                            total=len(dataloader))
+                             desc=f"Evaluating for {mode}",
+                             total=len(dataloader))
             for batch in eval_pbar:
                 input_seqs, item_idxs = batch
                 num_users += input_seqs.shape[0]
 
                 inputs = {'input_seqs': input_seqs.to(self.device),
-                        'item_idxs': item_idxs.to(self.device)}
+                          'item_idxs': item_idxs.to(self.device)}
                 outputs = self.model(**inputs)
 
                 logits = -outputs[0]
