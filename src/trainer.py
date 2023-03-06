@@ -159,11 +159,14 @@ class Trainer:
 
         return (best_ndcg_epoch, best_model_state_dict, best_optim_state_dict)
 
-    def evaluate(self, mode='valid'):
+    def evaluate(self, mode: str='valid', model: SASRec=None) -> tuple[float, float]:
         if mode == 'valid':
             dataloader = self.valid_dataloader
         else:
             dataloader = self.test_dataloader
+
+        if model:
+            self.model = model
 
         ndcg = 0
         hit = 0
