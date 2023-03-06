@@ -70,7 +70,18 @@ def main() -> None:
                       optimizer=optimizer,
                       **vars(trainer_args))
 
-    best_model_state_dict = trainer.train()
+    best_results = trainer.train()
+    best_ndcg_epoch, best_model_state_dict, best_optim_state_dict = best_results
+
+    # Perform test.
+    model.load_state_dict(best_model_state_dict)
+    logger.info(f"Testing with model checkpoint from epoch {best_ndcg_epoch}...")
+    test_ndcg, test_hit = trainer.evaluate(mode='test', model=model)
+
+    test_ndcg_msg = f"Test nDCG@{trainer_args.evaluate_k} is {test_ndcg: 0.6f}."
+    test_hit_msg = f"Test Hit@{trainer_args.evaluate_k} is {test_hit: 0.6f}."
+    test_result_msg = '\n'.join([test_ndcg_msg, test_hit_msg])
+    logger.info(f"\n{test_result_msg}")
 
 
 if __name__ == '__main__':
