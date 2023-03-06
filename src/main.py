@@ -26,6 +26,8 @@ def main() -> None:
     args = get_args()
     args.device = get_device()
 
+    torch.manual_seed(args.random_seed)
+
     # Get timestamp.
     time_right_now = time.time()
     timestamp = datetime.fromtimestamp(timestamp=time_right_now).strftime(format='%m-%d-%Y-%H%M')
@@ -39,6 +41,9 @@ def main() -> None:
     if not os.path.exists('../logs'):
         os.makedirs('../logs', exist_ok=True)
     args.log_filename = os.path.join('../logs', args.log_filename)
+
+    # Create save file.
+    args.save_dir = f'{data_name}_lr-{args.lr}_batch-size-{args.batch_size}_seed-{args.random_seed}'
 
     # Logging basic configuration.
     log_msg_format = '[%(asctime)s - %(levelname)s - %(filename)s: %(lineno)d] %(message)s'
@@ -76,10 +81,10 @@ def main() -> None:
     # Perform test.
     model.load_state_dict(best_model_state_dict)
     logger.info(f"Testing with model checkpoint from epoch {best_ndcg_epoch}...")
-    test_ndcg, test_hit = trainer.evaluate(mode='test', model=model)
+    test_ndcg, test_hit_rate = trainer.evaluate(mode='test', model=model)
 
     test_ndcg_msg = f"Test nDCG@{trainer_args.evaluate_k} is {test_ndcg: 0.6f}."
-    test_hit_msg = f"Test Hit@{trainer_args.evaluate_k} is {test_hit: 0.6f}."
+    test_hit_msg = f"Test Hit@{trainer_args.evaluate_k} is {test_hit_rate: 0.6f}."
     test_result_msg = '\n'.join([test_ndcg_msg, test_hit_msg])
     logger.info(f"\n{test_result_msg}")
 
