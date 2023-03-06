@@ -43,7 +43,7 @@ def main() -> None:
     args.log_filename = os.path.join('../logs', args.log_filename)
 
     # Create save file.
-    args.save_dir = f'{data_name}_lr-{args.lr}_batch-size-{args.batch_size}_seed-{args.random_seed}'
+    args.save_dir = log_filename.split('.log')[0]
 
     # Logging basic configuration.
     log_msg_format = '[%(asctime)s - %(levelname)s - %(filename)s: %(lineno)d] %(message)s'
