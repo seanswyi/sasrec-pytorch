@@ -10,6 +10,12 @@ def get_args() -> argparse.Namespace:
         action='store_true',
         default=False
     )
+    parser.add_argument(
+        '--random_seed',
+        default=42,
+        type=int,
+        help="Random seed for deterministic training."
+    )
 
     # Dataset arguments.
     parser.add_argument(
@@ -135,8 +141,21 @@ def get_args() -> argparse.Namespace:
         type=str,
         help="Determines the type of scheduler to use."
     )
+    parser.add_argument(
+        '--resume_training',
+        action='store_true',
+        default=False,
+        help="Option on whether or not to resume training."
+    )
+    parser.add_argument(
+        '--output_dir',
+        default='../outputs',
+        type=str,
+        help="Directory to save all results and artifacts."
+    )
 
     args = parser.parse_args()
+
     return args
 
 
@@ -178,3 +197,6 @@ class TrainerArgs:
         self.use_scheduler = args.use_scheduler
         self.warmup_ratio = args.warmup_ratio
         self.scheduler_type = args.scheduler_type
+        self.resume_training = args.resume_training
+        self.output_dir = args.output_dir
+        self.save_dir = args.save_dir
