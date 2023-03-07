@@ -15,6 +15,9 @@ from model import SASRec
 from utils import get_negative_samples, get_scheduler
 
 
+StateDict = OrderedDict[str, torch.Tensor]
+
+
 logger = logging.getLogger()
 
 
@@ -107,9 +110,9 @@ class Trainer:
     def save_results(self,
                      epoch: int,
                      ndcg: float,
-                     model_state_dict: OrderedDict[str, torch.Tensor],
-                     optim_state_dict: OrderedDict[str, torch.Tensor],
-                     scheduler_state_dict: OrderedDict[str, torch.Tensor]=None,
+                     model_state_dict: StateDict,
+                     optim_state_dict: StateDict,
+                     scheduler_state_dict: StateDict=None,
                      save_name: str='best') -> None:
         checkpoint = {f'{save_name}_epoch': epoch,
                       f'{save_name}_ndcg': ndcg,
@@ -119,9 +122,7 @@ class Trainer:
         save_dir = os.path.join(self.save_dir, f'{save_name}_checkpoint.pt')
         torch.save(obj=checkpoint, f=save_dir)
 
-    def train(self) -> (int,
-                        OrderedDict[str, torch.Tensor],
-                        OrderedDict[str, torch.Tensor]):
+    def train(self) -> (int, StateDict, StateDict):
         best_ndcg = 0
         best_hit_rate = 0
         best_ndcg_epoch = 0
@@ -224,7 +225,7 @@ class Trainer:
 
         return (best_ndcg_epoch, best_model_state_dict, best_optim_state_dict)
 
-    def evaluate(self, mode: str='valid', model: SASRec=None) -> tuple[float, float]:
+    def evaluate(self, mode: str='valid', model: SASRec=None) -> (float, float):
         if mode == 'valid':
             dataloader = self.valid_dataloader
         else:
