@@ -198,10 +198,10 @@ class Trainer:
                 best_hit_rate = hit
                 best_hit_epoch = epoch
 
-            epoch_result_msg = f"Epoch {epoch}, \
-                loss: {epoch_loss: 0.6f}, \
-                    nDCG@{self.evaluate_k}: {ndcg: 0.4f}, \
-                        Hit@{self.evaluate_k}: {hit: 0.4f}"
+            epoch_result_msg = f"Epoch {epoch}, "\
+                               f"loss: {epoch_loss: 0.6f}, "\
+                               f"nDCG@{self.evaluate_k}: {ndcg: 0.4f}, "\
+                               f"Hit@{self.evaluate_k}: {hit: 0.4f}"
             logger.info(epoch_result_msg)
 
             most_recent_model = self.model.state_dict()
