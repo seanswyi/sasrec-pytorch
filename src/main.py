@@ -10,6 +10,7 @@ from torch import optim
 
 from utils import (get_args,
                    get_device,
+                   get_log_filename,
                    DatasetArgs,
                    ModelArgs,
                    OptimizerArgs,
@@ -34,13 +35,10 @@ def main() -> None:
     args.timestamp = timestamp
 
     # Get log file information.
-    data_name = args.data_filename.split('.txt')[0]
-    log_filename = f"sasrec-{data_name}_lr-{args.lr}_batch-size-{args.batch_size}\
-        _num-epochs-{args.num_epochs}_{timestamp}.log"
-    args.log_filename = log_filename
-    if not os.path.exists('../logs'):
-        os.makedirs('../logs', exist_ok=True)
-    args.log_filename = os.path.join('../logs', args.log_filename)
+    if not os.path.exists(args.log_dir):
+        os.makedirs(args.log_dir, exist_ok=True)
+    log_filename = get_log_filename(args, timestamp)
+    args.log_filename = os.path.join(args.log_dir, log_filename)
 
     # Create save file.
     args.save_dir = log_filename.split('.log')[0]
@@ -52,6 +50,7 @@ def main() -> None:
                         level=logging.INFO,
                         handlers=handlers)
 
+    data_name = args.data_filename.split('.txt')[0]
     logger.info(f"Starting main process with {data_name}...")
 
     if args.debug:
