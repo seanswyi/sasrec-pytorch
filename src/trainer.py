@@ -119,6 +119,7 @@ class Trainer:
                       f'{save_name}_model_state_dict': model_state_dict,
                       f'{save_name}_optim_state_dict': optim_state_dict,
                       f'{save_name}_scheduler_state_dict': scheduler_state_dict}
+
         save_dir = os.path.join(self.save_dir, f'{save_name}_checkpoint.pt')
         torch.save(obj=checkpoint, f=save_dir)
 
@@ -188,6 +189,7 @@ class Trainer:
                 if self.use_scheduler:
                     best_scheduler_state_dict = copy.deepcopy(x=self.scheduler.state_dict())
 
+                logger.warning(f"New best. Saving to {self.save_dir}")
                 self.save_results(epoch=best_ndcg_epoch,
                                   ndcg=best_ndcg,
                                   model_state_dict=best_model_state_dict,
@@ -198,10 +200,10 @@ class Trainer:
                 best_hit_rate = hit
                 best_hit_epoch = epoch
 
-            epoch_result_msg = f"Epoch {epoch}, "\
-                               f"loss: {epoch_loss: 0.6f}, "\
-                               f"nDCG@{self.evaluate_k}: {ndcg: 0.4f}, "\
-                               f"Hit@{self.evaluate_k}: {hit: 0.4f}"
+            epoch_result_msg = f"\n\tEpoch {epoch}:"\
+                               f"\n\t\tTraining Loss: {epoch_loss: 0.6f}, "\
+                               f"\n\t\tnDCG@{self.evaluate_k}: {ndcg: 0.4f}, "\
+                               f"\n\t\tHit@{self.evaluate_k}:  {hit: 0.4f}"
             logger.info(epoch_result_msg)
 
             most_recent_model = self.model.state_dict()
