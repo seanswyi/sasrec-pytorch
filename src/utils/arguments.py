@@ -11,6 +11,12 @@ def get_args() -> argparse.Namespace:
         default=False
     )
     parser.add_argument(
+        '--log_dir',
+        default='../logs',
+        type=str,
+        help="Directory to save logging files."
+    )
+    parser.add_argument(
         '--random_seed',
         default=42,
         type=int,
