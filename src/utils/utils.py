@@ -85,7 +85,7 @@ def pad_or_truncate_seq(sequence: list[int],
 def get_log_filename(args: argparse.Namespace, timestamp: str) -> str:
     data_name = args.data_filename.split('.txt')[0]
 
-    log_filename = f"sasrec-{data_name}_"\
+    log_filename = f"sasrec-{data_name}-official-attn_"\
                    f"lr-{args.lr}_"\
                    f"batch-size-{args.batch_size}_"\
                    f"num-epochs-{args.num_epochs}_"\
