@@ -16,7 +16,10 @@ class SelfAttnBlock(nn.Module):
         self.layer_norm = nn.LayerNorm(normalized_shape=hidden_dim)
         self.dropout = nn.Dropout(p=dropout_p)
 
-        self.self_attn = SelfAttn(hidden_dim=hidden_dim)
+        self.self_attn = nn.MultiheadAttention(embed_dim=hidden_dim,
+                                               num_heads=1,
+                                               dropout=dropout_p,
+                                               batch_first=True)
         self.ffnn = PointWiseFFNN(hidden_dim=hidden_dim)
 
     def dropout_layernorm(self, x: torch.Tensor) -> torch.Tensor:
@@ -28,7 +31,15 @@ class SelfAttnBlock(nn.Module):
     def forward(self,
                 x: torch.Tensor,
                 padding_mask: torch.Tensor) -> torch.Tensor:
-        x_attn = self.self_attn(q=x, k=x, v=x)
+        seq_len = x.shape[1]
+        attention_mask = ~torch.tril(torch.ones(size=(seq_len, seq_len), dtype=torch.bool))
+        device = x.device.type
+        attention_mask = attention_mask.to(device)
+
+        x_attn, _ = self.self_attn(key=x,
+                                   query=x,
+                                   value=x,
+                                   attn_mask=attention_mask)
         x_attn_output = x + self.dropout_layernorm(x_attn)
 
         x_ffnn = self.ffnn(x_attn_output)
