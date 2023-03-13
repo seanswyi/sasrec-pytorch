@@ -1,9 +1,11 @@
 import argparse
 from datetime import datetime
+import json
 import logging
 import os
 import time
 
+import numpy as np
 import torch
 from torch.nn import functional as F
 from torch.nn import init
@@ -35,6 +37,36 @@ def main() -> None:
     timestamp = datetime.fromtimestamp(timestamp=time_right_now).strftime(format='%m-%d-%Y-%H%M')
     args.timestamp = timestamp
 
+    data_name = args.data_filename.split('.txt')[0]
+
+    # If we're resuming training, we have to set up our args and log file accordingly.
+    if args.resume_training:
+        if args.resume_dir:
+            resume_dir = args.resume_dir
+
+            args_filename = os.path.join(args.output_dir, args.resume_dir, 'args.json')
+            with open(file=args_filename) as f:
+                args = json.load(fp=f)
+
+            args.log_filename = os.path.join(args.log_dir, f'{args.resume_dir}.log')
+            args.save_dir = resume_dir
+            args.resume_dir = resume_dir
+        else:
+            relevant_files = [f for f in os.listdir(args.output_dir) if data_name in f]
+            timestamps = [f.split('_')[-1] for f in relevant_files]
+            timestamp_objs = [datetime.strptime(ts, '%m-%d-%Y-%H%M').timestamp() for ts in timestamps]
+
+            most_recent_ts_idx = np.argmax(timestamp_objs)
+            resume_dir = relevant_files[most_recent_ts_idx]
+
+            args_filename = os.path.join(args.output_dir, resume_dir, 'args.json')
+            with open(file=args_filename) as f:
+                args = json.load(fp=f)
+
+            args.log_filename = os.path.join(args.log_dir, f'{resume_dir}.log')
+            args.save_dir = os.path.join(args.output_dir, resume_dir)
+            args.resume_dir = resume_dir
+
     # Get log file information.
     if not os.path.exists(args.log_dir):
         os.makedirs(args.log_dir, exist_ok=True)
@@ -43,7 +75,14 @@ def main() -> None:
     args.log_filename = os.path.join(args.log_dir, log_filename)
 
     # Create save file.
-    args.save_dir = output_name
+    args.save_name = output_name
+    args.save_dir = os.path.join(args.output_dir, output_name)
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir, exist_ok=True)
+
+    args_save_filename = os.path.join(args.save_dir, 'args.json')
+    with open(file=args_save_filename, mode='w') as f:
+        json.dump(obj=vars(args), fp=f, indent=2)
 
     # Logging basic configuration.
     log_msg_format = '[%(asctime)s - %(levelname)s - %(filename)s: %(lineno)d] %(message)s'
@@ -51,8 +90,6 @@ def main() -> None:
     logging.basicConfig(format=log_msg_format,
                         level=logging.INFO,
                         handlers=handlers)
-
-    data_name = args.data_filename.split('.txt')[0]
     logger.info(f"Starting main process with {data_name}...")
 
     if args.debug:
