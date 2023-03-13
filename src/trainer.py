@@ -32,13 +32,12 @@ class Trainer:
                  warmup_ratio: float,
                  use_scheduler: bool,
                  scheduler_type: str,
-                 output_dir: str,
                  save_dir: str,
                  resume_training: bool=False,
                  device: str='cpu') -> None:
         self.device = device
         self.evaluate_k = evaluate_k
-        self.save_dir = os.path.join(output_dir, save_dir)
+        self.save_dir = save_dir
 
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir, exist_ok=True)
