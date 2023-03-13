@@ -6,11 +6,12 @@ import time
 
 import torch
 from torch.nn import functional as F
+from torch.nn import init
 from torch import optim
 
 from utils import (get_args,
                    get_device,
-                   get_log_filename,
+                   get_output_name,
                    DatasetArgs,
                    ModelArgs,
                    OptimizerArgs,
@@ -37,7 +38,8 @@ def main() -> None:
     # Get log file information.
     if not os.path.exists(args.log_dir):
         os.makedirs(args.log_dir, exist_ok=True)
-    log_filename = get_log_filename(args, timestamp)
+    output_name = get_output_name(args, timestamp)
+    log_filename = f'{output_name}.log'
     args.log_filename = os.path.join(args.log_dir, log_filename)
 
     # Create save file.
@@ -62,6 +64,10 @@ def main() -> None:
     args.num_items = dataset.num_items
     model_args = ModelArgs(args)
     model = SASRec(**vars(model_args))
+
+    for name, param in model.named_parameters():
+        init.xavier_uniform_(param.data)
+
     model = model.to(args.device)
 
     optimizer_args = OptimizerArgs(args)
