@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 import torch
+from torch import nn
 from torch.nn import functional as F
 from tqdm import tqdm
 
@@ -82,14 +83,14 @@ def pad_or_truncate_seq(sequence: list[int],
     return sequence
 
 
-def get_log_filename(args: argparse.Namespace, timestamp: str) -> str:
+def get_output_name(args: argparse.Namespace, timestamp: str) -> str:
     data_name = args.data_filename.split('.txt')[0]
 
-    log_filename = f"sasrec-{data_name}-official-attn_"\
-                   f"lr-{args.lr}_"\
-                   f"batch-size-{args.batch_size}_"\
-                   f"num-epochs-{args.num_epochs}_"\
-                   f"seed-{args.random_seed}_"\
-                   f"{timestamp}.log"
+    output_name = f'sasrec-{data_name}_'\
+                  f'lr-{args.lr}_'\
+                  f'batch-size-{args.batch_size}_'\
+                  f'num-epochs-{args.num_epochs}_'\
+                  f'seed-{args.random_seed}_'\
+                  f'{timestamp}'
 
-    return log_filename
+    return output_name

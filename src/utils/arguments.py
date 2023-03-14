@@ -22,6 +22,12 @@ def get_args() -> argparse.Namespace:
         type=int,
         help="Random seed for deterministic training."
     )
+    parser.add_argument(
+        '--resume_dir',
+        default='',
+        type=str,
+        help="Output name from which to resume training."
+    )
 
     # Dataset arguments.
     parser.add_argument(
@@ -204,5 +210,4 @@ class TrainerArgs:
         self.warmup_ratio = args.warmup_ratio
         self.scheduler_type = args.scheduler_type
         self.resume_training = args.resume_training
-        self.output_dir = args.output_dir
         self.save_dir = args.save_dir

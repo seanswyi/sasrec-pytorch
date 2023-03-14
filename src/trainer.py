@@ -32,13 +32,12 @@ class Trainer:
                  warmup_ratio: float,
                  use_scheduler: bool,
                  scheduler_type: str,
-                 output_dir: str,
                  save_dir: str,
                  resume_training: bool=False,
                  device: str='cpu') -> None:
         self.device = device
         self.evaluate_k = evaluate_k
-        self.save_dir = os.path.join(output_dir, save_dir)
+        self.save_dir = save_dir
 
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir, exist_ok=True)
@@ -219,6 +218,10 @@ class Trainer:
                               optim_state_dict=most_recent_optim,
                               scheduler_state_dict=most_recent_scheduler,
                               save_name='most_recent')
+
+            # Early stopping.
+            if epoch - best_ndcg_epoch == 20:
+                logger.warning(f"Stopping early at epoch {epoch}.")
 
         best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
         best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} at epoch {best_hit_epoch}."
