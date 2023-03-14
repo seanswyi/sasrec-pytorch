@@ -219,6 +219,10 @@ class Trainer:
                               scheduler_state_dict=most_recent_scheduler,
                               save_name='most_recent')
 
+            # Early stopping.
+            if epoch - best_ndcg_epoch == 20:
+                logger.warning(f"Stopping early at epoch {epoch}.")
+
         best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
         best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} at epoch {best_hit_epoch}."
         best_results_msg = '\n'.join([best_ndcg_msg, best_hit_msg])
