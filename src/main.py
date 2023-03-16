@@ -15,6 +15,7 @@ from utils import (get_args,
                    get_device,
                    get_output_name,
                    DatasetArgs,
+                   DotDict,
                    ModelArgs,
                    OptimizerArgs,
                    TrainerArgs)
@@ -44,9 +45,11 @@ def main() -> None:
         if args.resume_dir:
             resume_dir = args.resume_dir
 
-            args_filename = os.path.join(args.output_dir, args.resume_dir, 'args.json')
-            with open(file=args_filename) as f:
+            args_save_filename = os.path.join(args.output_dir, args.resume_dir, 'args.json')
+            with open(file=args_save_filename) as f:
                 args = json.load(fp=f)
+
+            args = DotDict(args)
 
             args.log_filename = os.path.join(args.log_dir, f'{args.resume_dir}.log')
             args.save_dir = resume_dir
@@ -59,9 +62,11 @@ def main() -> None:
             most_recent_ts_idx = np.argmax(timestamp_objs)
             resume_dir = relevant_files[most_recent_ts_idx]
 
-            args_filename = os.path.join(args.output_dir, resume_dir, 'args.json')
-            with open(file=args_filename) as f:
+            args_save_filename = os.path.join(args.output_dir, resume_dir, 'args.json')
+            with open(file=args_save_filename) as f:
                 args = json.load(fp=f)
+
+            args = DotDict(args)
 
             args.log_filename = os.path.join(args.log_dir, f'{resume_dir}.log')
             args.save_dir = os.path.join(args.output_dir, resume_dir)
