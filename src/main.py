@@ -104,7 +104,10 @@ def main() -> None:
     model = SASRec(**vars(model_args))
 
     for name, param in model.named_parameters():
-        init.xavier_uniform_(param.data)
+        try:
+            init.xavier_uniform_(param.data)
+        except ValueError:
+            continue
 
     model = model.to(args.device)
 
