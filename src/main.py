@@ -91,6 +91,7 @@ def main() -> None:
                         level=logging.INFO,
                         handlers=handlers)
     logger.info(f"Starting main process with {data_name}...")
+    logger.info(f"Output directory set to {args.save_dir}")
 
     if args.debug:
         args.num_epochs = 1
