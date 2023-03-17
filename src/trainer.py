@@ -131,7 +131,6 @@ class Trainer:
         best_optim_state_dict = None
         best_scheduler_state_dict = None
 
-        last_epoch = 0
         num_steps = 0
         epoch_pbar = trange(self.num_epochs,
                             desc="Epochs: ",
@@ -140,7 +139,6 @@ class Trainer:
             self.model.train()
 
             epoch_loss = 0
-            loss_func = nn.BCEWithLogitsLoss()
 
             train_pbar = tqdm(iterable=self.train_dataloader,
                               desc="Training",
@@ -222,6 +220,7 @@ class Trainer:
             # Early stopping.
             if epoch - best_ndcg_epoch == 20:
                 logger.warning(f"Stopping early at epoch {epoch}.")
+                break
 
         best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
         best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} at epoch {best_hit_epoch}."
