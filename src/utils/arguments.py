@@ -106,6 +106,12 @@ def get_args() -> argparse.Namespace:
         help="Number of epochs to train the model.",
     )
     parser.add_argument(
+        "--early_stop_epoch",
+        default=20,
+        type=int,
+        help="Number of epochs to stop early after."
+    )
+    parser.add_argument(
         "--use_scheduler",
         action="store_true",
         default=False,
@@ -176,6 +182,7 @@ class TrainerArgs:
         self.evaluate_k = args.evaluate_k
         self.max_lr = args.lr
         self.num_epochs = args.num_epochs
+        self.early_stop_epoch = args.early_stop_epoch
         self.use_scheduler = args.use_scheduler
         self.warmup_ratio = args.warmup_ratio
         self.scheduler_type = args.scheduler_type
