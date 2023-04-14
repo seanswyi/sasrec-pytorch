@@ -4,10 +4,9 @@ import torch
 from torch.nn import functional as F
 
 
-def scaled_dotprod_attn(q: torch.Tensor,
-                        k: torch.Tensor,
-                        v: torch.Tensor,
-                        d: int) -> torch.Tensor:
+def scaled_dotprod_attn(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, d: int
+) -> torch.Tensor:
     """Perform scaled dot-product attention as described in the paper."""
     qk = q @ k
     qk /= math.sqrt(d)

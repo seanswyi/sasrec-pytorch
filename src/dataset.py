@@ -19,11 +19,9 @@ ItemIdxs = torch.Tensor
 
 
 class Dataset:
-    def __init__(self,
-                 batch_size: int,
-                 max_seq_len: int,
-                 data_filepath: str,
-                 debug: bool):
+    def __init__(
+        self, batch_size: int, max_seq_len: int, data_filepath: str, debug: bool
+    ):
         self.debug = debug
         self.batch_size = batch_size
         self.max_seq_len = max_seq_len
@@ -57,17 +55,16 @@ class Dataset:
 
         return user_item_pairs
 
-    def create_mappings(self, data: list[list[User, Item]]) -> (dict[User, list[Item]],
-                                                                dict[Item, list[User]]):
+    def create_mappings(
+        self, data: list[list[User, Item]]
+    ) -> (dict[User, list[Item]], dict[Item, list[User]]):
         """
         Convert the list of [user, item] pairs to a mapping where the users are keys \
             mapped to a list of items.
         """
         user2items = {}
         item2users = {}
-        pbar = tqdm(iterable=data,
-                    desc="Creating user2items",
-                    total=len(data))
+        pbar = tqdm(iterable=data, desc="Creating user2items", total=len(data))
         for user, item in pbar:
             try:
                 user2items[user].append(item)
@@ -81,10 +78,9 @@ class Dataset:
 
         return user2items, item2users
 
-    def create_train_valid_test(self,
-                                user2items: dict[User, list[Item]]) -> (dict[User, list[Item]],
-                                                                        dict[User, list[Item]],
-                                                                        dict[User, list[Item]]):
+    def create_train_valid_test(
+        self, user2items: dict[User, list[Item]]
+    ) -> (dict[User, list[Item]], dict[User, list[Item]], dict[User, list[Item]]):
         """
         Makes train/valid/test splits for users and items.
         If a user has interacted with less than three items, we only use that for training.
@@ -94,9 +90,11 @@ class Dataset:
         user2items_valid = {}
         user2items_test = {}
 
-        pbar = tqdm(iterable=user2items.items(),
-                    desc="Getting train/valid/test splits",
-                    total=len(user2items))
+        pbar = tqdm(
+            iterable=user2items.items(),
+            desc="Getting train/valid/test splits",
+            total=len(user2items),
+        )
         for user, items in pbar:
             num_items = len(items)
 
@@ -156,9 +154,9 @@ class Dataset:
 
         return (input_seqs, item_idxs)
 
-    def get_dataloader(self,
-                       data: dict[User, list[Item]],
-                       split: str='train') -> DataLoader:
+    def get_dataloader(
+        self, data: dict[User, list[Item]], split: str = "train"
+    ) -> DataLoader:
         """
         Create and return a DataLoader. Not considering users in this setting.
 
@@ -169,7 +167,7 @@ class Dataset:
         """
         dataset = list(data.values())
 
-        if split in ['valid', 'test']:
+        if split in ["valid", "test"]:
             shuffle = False
             collate_fn = self.collate_fn_eval
 
@@ -178,7 +176,7 @@ class Dataset:
 
             # Get negative samples and append validation to
             #   input sequence for test phase.
-            if split == 'valid':
+            if split == "valid":
                 for user, items in self.user2items_valid.items():
                     if items == []:
                         continue
@@ -187,7 +185,7 @@ class Dataset:
                     negative_samples = self.positive2negatives[positive_sample]
                     pred_item_idxs = [positive_sample] + negative_samples
                     all_pred_item_idxs.append(pred_item_idxs)
-            elif split == 'test':
+            elif split == "test":
                 for user, items in self.user2items_test.items():
                     if items == []:
                         continue
@@ -203,8 +201,10 @@ class Dataset:
             shuffle = True
             collate_fn = self.collate_fn_train
 
-        dataloader = DataLoader(dataset=dataset,
-                                batch_size=self.batch_size,
-                                shuffle=shuffle,
-                                collate_fn=collate_fn)
+        dataloader = DataLoader(
+            dataset=dataset,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            collate_fn=collate_fn,
+        )
         return dataloader

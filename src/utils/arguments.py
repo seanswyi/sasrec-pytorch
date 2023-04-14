@@ -5,165 +5,135 @@ import os
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
-        '--debug',
-        action='store_true',
-        default=False
-    )
-    parser.add_argument(
-        '--log_dir',
-        default='../logs',
+        "--log_dir",
+        default="../logs",
         type=str,
-        help="Directory to save logging files."
+        help="Directory to save logging files.",
     )
     parser.add_argument(
-        '--random_seed',
+        "--random_seed",
         default=42,
         type=int,
-        help="Random seed for deterministic training."
+        help="Random seed for deterministic training.",
     )
     parser.add_argument(
-        '--resume_dir',
-        default='',
+        "--resume_dir",
+        default="",
         type=str,
-        help="Output name from which to resume training."
+        help="Output name from which to resume training.",
     )
 
     # Dataset arguments.
     parser.add_argument(
-        '--max_seq_len',
+        "--max_seq_len",
         default=50,
         type=int,
-        help="Maximum number of items to see. Denoted by $n$ in the paper."
+        help="Maximum number of items to see. Denoted by $n$ in the paper.",
     )
     parser.add_argument(
-        '--batch_size',
-        default=128,
-        type=int,
-        help="Batch size for batching data."
+        "--batch_size", default=128, type=int, help="Batch size for batching data."
     )
     parser.add_argument(
-        '--data_root',
-        default='../data',
+        "--data_root",
+        default="../data",
         type=str,
-        help="Root directory containing _all_ datasets."
+        help="Root directory containing _all_ datasets.",
     )
     parser.add_argument(
-        '--data_filename',
-        default='amazon_beauty.txt',
+        "--data_filename",
+        default="amazon_beauty.txt",
         type=str,
-        choices=['amazon_beauty.txt',
-                 'amazon_games.txt',
-                 'steam.txt',
-                 'movie-lens_1m.txt'],
-        help="Name of data file."
+        choices=[
+            "amazon_beauty.txt",
+            "amazon_games.txt",
+            "steam.txt",
+            "movie-lens_1m.txt",
+        ],
+        help="Name of data file.",
     )
 
     # Model arguments.
     parser.add_argument(
-        '--hidden_dim',
-        default=50,
-        type=int,
-        help="Dimensionality of embedding matrix."
+        "--hidden_dim", default=50, type=int, help="Dimensionality of embedding matrix."
     )
     parser.add_argument(
-        '--num_blocks',
+        "--num_blocks",
         default=2,
-        help="Number of self-attention -> FFNN blocks to stack."
+        help="Number of self-attention -> FFNN blocks to stack.",
     )
     parser.add_argument(
-        '--dropout_p',
+        "--dropout_p",
         default=0.5,
         type=float,
-        help="Dropout rate applied to embedding layer and FFNN."
+        help="Dropout rate applied to embedding layer and FFNN.",
     )
     parser.add_argument(
-        '--share_item_emb',
-        action='store_true',
+        "--share_item_emb",
+        action="store_true",
         default=False,
-        help="Whether or not to use item matrix for prediction layer."
+        help="Whether or not to use item matrix for prediction layer.",
     )
 
     # Optimizer arguments.
+    parser.add_argument("--lr", default=0.001, type=float, help="Learning rate.")
     parser.add_argument(
-        '--lr',
-        default=0.001,
-        type=float,
-        help="Learning rate."
+        "--beta1", default=0.9, type=float, help="Beta1 argument for Adam optimizer."
     )
     parser.add_argument(
-        '--beta1',
-        default=0.9,
-        type=float,
-        help="Beta1 argument for Adam optimizer."
+        "--beta2", default=0.999, type=float, help="Beta2 argument for Adam optimizer."
     )
     parser.add_argument(
-        '--beta2',
-        default=0.999,
-        type=float,
-        help="Beta2 argument for Adam optimizer."
+        "--eps", default=1e-8, type=float, help="Epsilon value for Adam optimizer."
     )
     parser.add_argument(
-        '--eps',
-        default=1e-8,
-        type=float,
-        help="Epsilon value for Adam optimizer."
-    )
-    parser.add_argument(
-        '--weight_decay',
+        "--weight_decay",
         default=0.0,
         type=float,
-        help="Weight decay rate for Adam optimizer."
+        help="Weight decay rate for Adam optimizer.",
     )
 
     # Trainer arguments.
+    parser.add_argument("--device", default="", type=str, help="Device to use.")
     parser.add_argument(
-        '--device',
-        default='',
-        type=str,
-        help="Device to use."
+        "--evaluate_k", default=10, type=int, help="nDCG@k, Hit@k, etc."
     )
     parser.add_argument(
-        '--evaluate_k',
-        default=10,
-        type=int,
-        help="nDCG@k, Hit@k, etc."
-    )
-    parser.add_argument(
-        '--num_epochs',
+        "--num_epochs",
         default=2000,
         type=int,
-        help="Number of epochs to train the model."
+        help="Number of epochs to train the model.",
     )
     parser.add_argument(
-        '--use_scheduler',
-        action='store_true',
+        "--use_scheduler",
+        action="store_true",
         default=False,
-        help="Using the scheduler doesn't always help."
+        help="Using the scheduler doesn't always help.",
     )
     parser.add_argument(
-        '--warmup_ratio',
+        "--warmup_ratio",
         default=0.05,
         type=float,
-        help="Ratio to determine number of warmup steps."
+        help="Ratio to determine number of warmup steps.",
     )
     parser.add_argument(
-        '--scheduler_type',
-        default='onecycle',
+        "--scheduler_type",
+        default="onecycle",
         type=str,
-        help="Determines the type of scheduler to use."
+        help="Determines the type of scheduler to use.",
     )
     parser.add_argument(
-        '--resume_training',
-        action='store_true',
+        "--resume_training",
+        action="store_true",
         default=False,
-        help="Option on whether or not to resume training."
+        help="Option on whether or not to resume training.",
     )
     parser.add_argument(
-        '--output_dir',
-        default='../outputs',
+        "--output_dir",
+        default="../outputs",
         type=str,
-        help="Directory to save all results and artifacts."
+        help="Directory to save all results and artifacts.",
     )
 
     args = parser.parse_args()

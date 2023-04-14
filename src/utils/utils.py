@@ -15,16 +15,15 @@ NegativeSamples = torch.Tensor
 
 def get_device() -> str:
     if torch.cuda.is_available():
-        return 'cuda'
+        return "cuda"
 
     if torch.backends.mps.is_available():
-        return 'mps'
+        return "mps"
 
-    return 'cpu'
+    return "cpu"
 
 
-def get_positive2negatives(num_items: int,
-                           num_samples: int=100) -> list[int]:
+def get_positive2negatives(num_items: int, num_samples: int = 100) -> list[int]:
     """
     Creates a dictionary that maps an integer to an array of
       negative integers. This dictionary will be used later
@@ -32,25 +31,28 @@ def get_positive2negatives(num_items: int,
     """
     all_samples = np.arange(1, num_items + 1)
     positive2negatives = {}
-    pbar = tqdm(iterable=all_samples,
-                desc="Creating positive2negatives",
-                total=all_samples.shape[0])
+    pbar = tqdm(
+        iterable=all_samples,
+        desc="Creating positive2negatives",
+        total=all_samples.shape[0],
+    )
     for positive_sample in pbar:
-        candidates = np.concatenate((np.arange(positive_sample),
-                                     np.arange(positive_sample + 1, num_items + 1)),
-                                    axis=0)
-        negative_samples = np.random.choice(candidates,
-                                            size=(num_samples,),
-                                            replace=False)
+        candidates = np.concatenate(
+            (np.arange(positive_sample), np.arange(positive_sample + 1, num_items + 1)),
+            axis=0,
+        )
+        negative_samples = np.random.choice(
+            candidates, size=(num_samples,), replace=False
+        )
 
         positive2negatives[positive_sample] = negative_samples.tolist()
 
     return positive2negatives
 
 
-def get_negative_samples(positive2negatives: dict[int, list[int]],
-                         positive_seqs: torch.Tensor,
-                         num_samples=1) -> torch.Tensor:
+def get_negative_samples(
+    positive2negatives: dict[int, list[int]], positive_seqs: torch.Tensor, num_samples=1
+) -> torch.Tensor:
     negative_seqs = torch.zeros(size=positive_seqs.shape, dtype=torch.long)
     for row_idx in range(positive_seqs.shape[0]):
         for col_idx in range(positive_seqs[row_idx].shape[0]):
@@ -60,16 +62,15 @@ def get_negative_samples(positive2negatives: dict[int, list[int]],
                 continue
 
             negative_samples = positive2negatives[positive_sample]
-            negative_sample = np.random.choice(a=negative_samples,
-                                               size=(num_samples,),
-                                               replace=False)
+            negative_sample = np.random.choice(
+                a=negative_samples, size=(num_samples,), replace=False
+            )
             negative_seqs[row_idx][col_idx] = negative_sample[0]
 
     return negative_seqs
 
 
-def pad_or_truncate_seq(sequence: list[int],
-                        max_seq_len: int) -> InputSequences:
+def pad_or_truncate_seq(sequence: list[int], max_seq_len: int) -> InputSequences:
     """Pads or truncates sequences depending on max_seq_len."""
     if isinstance(sequence, list):
         sequence = torch.tensor(sequence)
@@ -84,13 +85,15 @@ def pad_or_truncate_seq(sequence: list[int],
 
 
 def get_output_name(args: argparse.Namespace, timestamp: str) -> str:
-    data_name = args.data_filename.split('.txt')[0]
+    data_name = args.data_filename.split(".txt")[0]
 
-    output_name = f'sasrec-{data_name}_'\
-                  f'lr-{args.lr}_'\
-                  f'batch-size-{args.batch_size}_'\
-                  f'num-epochs-{args.num_epochs}_'\
-                  f'seed-{args.random_seed}_'\
-                  f'{timestamp}'
+    output_name = (
+        f"sasrec-{data_name}_"
+        f"lr-{args.lr}_"
+        f"batch-size-{args.batch_size}_"
+        f"num-epochs-{args.num_epochs}_"
+        f"seed-{args.random_seed}_"
+        f"{timestamp}"
+    )
 
     return output_name
