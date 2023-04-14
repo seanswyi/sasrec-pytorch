@@ -36,10 +36,12 @@ class SelfAttnBlock(nn.Module):
         device = x.device.type
         attention_mask = attention_mask.to(device)
 
-        x_attn, _ = self.self_attn(key=x,
-                                   query=x,
-                                   value=x,
-                                   attn_mask=attention_mask)
+        x_attn, _ = self.self_attn(
+            key=self.layer_norm(x),
+            query=x,
+            value=x,
+            attn_mask=attention_mask
+        )
         x_attn_output = x + self.dropout_layernorm(x_attn)
 
         x_ffnn = self.ffnn(x_attn_output)
