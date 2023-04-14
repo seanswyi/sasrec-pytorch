@@ -30,6 +30,7 @@ class Trainer:
         optimizer: Optimizer,
         max_lr: float,
         num_epochs: int,
+        early_stop_epoch: int,
         warmup_ratio: float,
         use_scheduler: bool,
         scheduler_type: str,
@@ -58,6 +59,7 @@ class Trainer:
 
         self.max_lr = max_lr
         self.num_epochs = num_epochs
+        self.early_stop_epoch = early_stop_epoch
         self.warmup_ratio = warmup_ratio
         self.scheduler_type = scheduler_type
 
@@ -244,7 +246,7 @@ class Trainer:
             )
 
             # Early stopping.
-            if epoch - best_ndcg_epoch == 20:
+            if epoch - best_ndcg_epoch == self.early_stop_epoch:
                 logger.warning(f"Stopping early at epoch {epoch}.")
                 break
 
