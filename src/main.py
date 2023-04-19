@@ -7,7 +7,6 @@ import time
 
 import numpy as np
 import torch
-from torch.nn import functional as F
 from torch.nn import init
 from torch import optim
 
@@ -144,7 +143,7 @@ def main() -> None:
     )
 
     best_results = trainer.train()
-    best_ndcg_epoch, best_model_state_dict, best_optim_state_dict = best_results
+    best_ndcg_epoch, best_model_state_dict, _ = best_results
 
     # Perform test.
     model.load_state_dict(best_model_state_dict)
