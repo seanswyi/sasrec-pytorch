@@ -1,5 +1,3 @@
-import argparse
-
 import torch
 from torch import nn
 

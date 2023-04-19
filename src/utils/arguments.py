@@ -109,7 +109,7 @@ def get_args() -> argparse.Namespace:
         "--early_stop_epoch",
         default=20,
         type=int,
-        help="Number of epochs to stop early after."
+        help="Number of epochs to stop early after.",
     )
     parser.add_argument(
         "--use_scheduler",

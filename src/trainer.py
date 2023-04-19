@@ -1,4 +1,3 @@
-import argparse
 from collections import OrderedDict
 import copy
 import logging
@@ -86,15 +85,15 @@ class Trainer:
 
             most_recent_epoch = checkpoint["most_recent_epoch"]
             most_recent_model = checkpoint["most_recent_model_state_dict"]
-            most_recent_optimizer = checkpoint["most_recent_optim_state_dict"]
-            most_recent_scheduler = checkpoint["most_recent_scheduler_state_dict"]
+            most_recent_optim = checkpoint["most_recent_optim_state_dict"]
+            most_recent_sched = checkpoint["most_recent_scheduler_state_dict"]
 
             self.model.load_state_dict(most_recent_model)
-            self.optimizer.load_state_dict(most_recent_optimizer)
+            self.optimizer.load_state_dict(most_recent_optim)
             self.num_epochs = num_epochs - most_recent_epoch
 
             if self.scheduler:
-                self.scheduler.load_state_dict(most_recent_scheduler)
+                self.scheduler.load_state_dict(most_recent_sched)
 
     def calculate_bce_loss(
         self,
