@@ -150,6 +150,10 @@ def get_args() -> argparse.Namespace:
 class DatasetArgs:
     def __init__(self, args: argparse.Namespace) -> None:
         args.data_root = os.path.expanduser(path=args.data_root)
+
+        if not os.getcwd().endswith("src") and os.getcwd().endswith("sasrec-pytorch"):
+            args.data_root = "./data"
+
         self.data_filepath = os.path.join(args.data_root, args.data_filename)
 
         self.batch_size = args.batch_size
