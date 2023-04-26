@@ -9,6 +9,12 @@ def get_args() -> argparse.Namespace:
 
     parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
+        "--save",
+        action="store_true",
+        default=False,
+        help="Determines whether we save our results or not.",
+    )
+    parser.add_argument(
         "--log_dir",
         default="../logs",
         type=str,
