@@ -97,6 +97,12 @@ def main() -> None:
         with open(file=args_save_filename, mode="w") as f:
             json.dump(obj=vars(args), fp=f, indent=2)
 
+    if args.debug:
+        args.num_epochs = 1
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
     # Logging basic configuration.
     log_msg_format = (
         "[%(asctime)s - %(levelname)s - %(filename)s: %(lineno)d] %(message)s"
@@ -105,7 +111,10 @@ def main() -> None:
         logging.FileHandler(filename=args.log_filename),
         logging.StreamHandler(),
     ]
-    logging.basicConfig(format=log_msg_format, level=logging.INFO, handlers=handlers)
+    logging.basicConfig(format=log_msg_format, level=log_level, handlers=handlers)
+
+    if args.debug:
+        logger.warning("Debugging mode is turned on.")
 
     if args.resume_training:
         logger.warning("Resuming training from previous run.")
@@ -113,9 +122,6 @@ def main() -> None:
     logger.info(f"Starting main process with {data_name}...")
     logger.info(f"Output directory set to {args.save_dir}")
     logger.info(f"Logging file set to {args.log_filename}")
-
-    if args.debug:
-        args.num_epochs = 1
 
     dataset_args = DatasetArgs(args)
     dataset = Dataset(**vars(dataset_args))
