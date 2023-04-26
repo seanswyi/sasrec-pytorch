@@ -12,7 +12,6 @@ from torch import optim
 
 from utils import (
     get_args,
-    get_device,
     get_output_name,
     DatasetArgs,
     ModelArgs,
@@ -29,7 +28,6 @@ logger = logging.getLogger()
 
 def main() -> None:
     args = get_args()
-    args.device = get_device()
 
     torch.manual_seed(args.random_seed)
 

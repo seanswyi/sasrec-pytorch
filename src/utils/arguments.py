@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from utils import get_device
+
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -143,6 +145,8 @@ def get_args() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
+
+    args.device = get_device()
 
     return args
 
