@@ -156,6 +156,10 @@ class DatasetArgs:
 
         self.data_filepath = os.path.join(args.data_root, args.data_filename)
 
+        assert os.path.exists(
+            self.data_filepath
+        ), f"{self.data_filepath} does not exist!"
+
         self.batch_size = args.batch_size
         self.max_seq_len = args.max_seq_len
         self.debug = args.debug
