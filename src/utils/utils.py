@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import numpy as np
 import torch
@@ -83,12 +84,13 @@ def pad_or_truncate_seq(sequence: list[int], max_seq_len: int) -> InputSequences
 
 
 def get_output_name(args: argparse.Namespace, timestamp: str) -> str:
-    data_name = args.data_filename.split(".txt")[0]
+    data_name, _ = os.path.splitext(args.data_filename)
 
     output_name = (
         f"sasrec-{data_name}_"
         f"lr-{args.lr}_"
         f"batch-size-{args.batch_size}_"
+        f"early-stop-{args.early_stop_epoch}"
         f"num-epochs-{args.num_epochs}_"
         f"seed-{args.random_seed}_"
         f"{timestamp}"
