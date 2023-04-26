@@ -144,6 +144,20 @@ def get_args() -> argparse.Namespace:
         help="Directory to save all results and artifacts.",
     )
 
+    # MLflow arguments.
+    parser.add_argument(
+        "--mlflow_experiment",
+        default="sasrec-pytorch-experiments",
+        type=str,
+        help="Name of MLflow experiment.",
+    )
+    parser.add_argument(
+        "--mlflow_run_name",
+        default="",
+        type=str,
+        help="Name for MLflow run within the experiment.",
+    )
+
     args = parser.parse_args()
 
     args.device = get_device()
