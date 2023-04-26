@@ -289,9 +289,8 @@ class Trainer:
 
                 logits = -outputs[0]
 
-                if (
-                    logits.device.type == "mps"
-                ):  # torch.argsort isn't implemented for MPS.
+                # torch.argsort isn't implemented for MPS.
+                if logits.device.type == "mps":
                     logits = logits.detach().cpu()
 
                 ranks = logits.argsort().argsort()

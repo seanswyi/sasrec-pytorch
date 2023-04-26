@@ -118,7 +118,7 @@ class Dataset:
           3. Slice the seqs so that the last element is used as the label.
         """
         seq_tensors = []
-        for idx, seq in enumerate(batch):
+        for seq in batch:
             seq = pad_or_truncate_seq(seq, max_seq_len=self.max_seq_len)
             seq_tensors.append(seq)
 
@@ -138,7 +138,7 @@ class Dataset:
         """
         input_seqs = [x[0] for x in batch]
         seq_tensors = []
-        for idx, seq in enumerate(input_seqs):
+        for seq in input_seqs:
             seq = pad_or_truncate_seq(seq, max_seq_len=self.max_seq_len)
             seq_tensors.append(seq)
 
@@ -172,7 +172,7 @@ class Dataset:
             # Get negative samples and append validation to
             #   input sequence for test phase.
             if split == "valid":
-                for user, items in self.user2items_valid.items():
+                for items in self.user2items_valid.values():
                     if items == []:
                         continue
 
@@ -181,7 +181,7 @@ class Dataset:
                     pred_item_idxs = [positive_sample] + negative_samples
                     all_pred_item_idxs.append(pred_item_idxs)
             elif split == "test":
-                for user, items in self.user2items_test.items():
+                for items in self.user2items_test.values():
                     if items == []:
                         continue
 
