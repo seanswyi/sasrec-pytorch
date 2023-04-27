@@ -145,7 +145,11 @@ class Trainer:
         best_scheduler_state_dict = None
 
         num_steps = 0
-        epoch_pbar = trange(self.num_epochs, desc="Epochs: ", total=self.num_epochs)
+        epoch_pbar = trange(
+            self.num_epochs,
+            desc="Epochs: ",
+            total=self.num_epochs,
+        )
         for epoch in epoch_pbar:
             self.model.train()
 
@@ -249,14 +253,24 @@ class Trainer:
                 logger.warning(f"Stopping early at epoch {epoch}.")
                 break
 
-        best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
-        best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} at epoch {best_hit_epoch}."
+        best_ndcg_msg = (
+            f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} "
+            f"at epoch {best_ndcg_epoch}."
+        )
+        best_hit_msg = (
+            f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} "
+            f"at epoch {best_hit_epoch}."
+        )
         best_results_msg = "\n".join([best_ndcg_msg, best_hit_msg])
         logger.info(f"Best results:\n{best_results_msg}")
 
         return (best_ndcg_epoch, best_model_state_dict, best_optim_state_dict)
 
-    def evaluate(self, mode: str = "valid", model: SASRec = None) -> (float, float):
+    def evaluate(
+        self,
+        mode: str = "valid",
+        model: SASRec = None,
+    ) -> (float, float):
         if mode == "valid":
             dataloader = self.valid_dataloader
         else:

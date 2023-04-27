@@ -20,7 +20,9 @@ class SASRec(nn.Module):
         self.device = device
 
         self.embedding_layer = EmbeddingLayer(
-            num_items=num_items, hidden_dim=hidden_dim, max_seq_len=max_seq_len
+            num_items=num_items,
+            hidden_dim=hidden_dim,
+            max_seq_len=max_seq_len,
         )
         self_attn_blocks = [
             SelfAttnBlock(

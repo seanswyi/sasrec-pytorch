@@ -5,15 +5,22 @@ from torch import nn
 
 
 class EmbeddingLayer(nn.Module):
-    def __init__(self, num_items: int, hidden_dim: int, max_seq_len: int) -> None:
+    def __init__(
+        self,
+        num_items: int,
+        hidden_dim: int,
+        max_seq_len: int,
+    ) -> None:
         super().__init__()
 
         self.hidden_dim = hidden_dim
         self.item_emb_matrix = nn.Embedding(
-            num_embeddings=num_items + 1, embedding_dim=hidden_dim
+            num_embeddings=num_items + 1,
+            embedding_dim=hidden_dim,
         )
         self.positional_emb = nn.Embedding(
-            num_embeddings=max_seq_len, embedding_dim=hidden_dim
+            num_embeddings=max_seq_len,
+            embedding_dim=hidden_dim,
         )
 
     def forward(self, x):

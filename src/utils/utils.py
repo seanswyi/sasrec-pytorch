@@ -50,7 +50,9 @@ def get_positive2negatives(num_items: int, num_samples: int = 100) -> list[int]:
 
 
 def get_negative_samples(
-    positive2negatives: dict[int, list[int]], positive_seqs: torch.Tensor, num_samples=1
+    positive2negatives: dict[int, list[int]],
+    positive_seqs: torch.Tensor,
+    num_samples=1,
 ) -> torch.Tensor:
     negative_seqs = torch.zeros(size=positive_seqs.shape, dtype=torch.long)
     for row_idx in range(positive_seqs.shape[0]):
@@ -69,7 +71,10 @@ def get_negative_samples(
     return negative_seqs
 
 
-def pad_or_truncate_seq(sequence: list[int], max_seq_len: int) -> InputSequences:
+def pad_or_truncate_seq(
+    sequence: list[int],
+    max_seq_len: int,
+) -> InputSequences:
     """Pads or truncates sequences depending on max_seq_len."""
     if isinstance(sequence, list):
         sequence = torch.tensor(sequence)

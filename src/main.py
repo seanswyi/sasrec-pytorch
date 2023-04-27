@@ -83,6 +83,7 @@ def main() -> None:
         # Get log file information.
         if not os.path.exists(args.log_dir):
             os.makedirs(args.log_dir, exist_ok=True)
+
         output_name = get_output_name(args, timestamp)
         log_filename = f"{output_name}.log"
         args.log_filename = os.path.join(args.log_dir, log_filename)
@@ -111,7 +112,11 @@ def main() -> None:
         logging.FileHandler(filename=args.log_filename),
         logging.StreamHandler(),
     ]
-    logging.basicConfig(format=log_msg_format, level=log_level, handlers=handlers)
+    logging.basicConfig(
+        format=log_msg_format,
+        level=log_level,
+        handlers=handlers,
+    )
 
     if args.debug:
         logger.warning("Debugging mode is turned on.")
@@ -143,7 +148,10 @@ def main() -> None:
 
     trainer_args = TrainerArgs(args)
     trainer = Trainer(
-        dataset=dataset, model=model, optimizer=optimizer, **vars(trainer_args)
+        dataset=dataset,
+        model=model,
+        optimizer=optimizer,
+        **vars(trainer_args),
     )
 
     best_results = trainer.train()
