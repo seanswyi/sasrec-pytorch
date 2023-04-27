@@ -6,7 +6,11 @@ from model import PointWiseFFNN
 
 class SelfAttnBlock(nn.Module):
     def __init__(
-        self, max_seq_len: int, hidden_dim: int, dropout_p: float, device: str
+        self,
+        max_seq_len: int,
+        hidden_dim: int,
+        dropout_p: float,
+        device: str,
     ) -> None:
         super().__init__()
 
@@ -15,7 +19,10 @@ class SelfAttnBlock(nn.Module):
         self.dropout = nn.Dropout(p=dropout_p)
 
         self.self_attn = nn.MultiheadAttention(
-            embed_dim=hidden_dim, num_heads=1, dropout=dropout_p, batch_first=True
+            embed_dim=hidden_dim,
+            num_heads=1,
+            dropout=dropout_p,
+            batch_first=True,
         )
         self.ffnn = PointWiseFFNN(hidden_dim=hidden_dim)
 
@@ -34,7 +41,10 @@ class SelfAttnBlock(nn.Module):
         attention_mask = attention_mask.to(device)
 
         x_attn, _ = self.self_attn(
-            key=self.layer_norm(x), query=x, value=x, attn_mask=attention_mask
+            key=self.layer_norm(x),
+            query=x,
+            value=x,
+            attn_mask=attention_mask,
         )
         x_attn_output = x + self.dropout_layernorm(x_attn)
 

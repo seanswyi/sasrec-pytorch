@@ -5,6 +5,7 @@ import logging
 import os
 import time
 
+import mlflow
 import numpy as np
 import torch
 from torch.nn import init
@@ -30,12 +31,12 @@ def main() -> None:
     args = get_args()
 
     torch.manual_seed(args.random_seed)
+    mlflow.set_experiment(experiment_name=args.mlflow_experiment)
 
     # Get timestamp.
     time_right_now = time.time()
-    timestamp = datetime.fromtimestamp(timestamp=time_right_now).strftime(
-        format="%m-%d-%Y-%H%M"
-    )
+    timestamp = datetime.fromtimestamp(timestamp=time_right_now)
+    timestamp = timestamp.strftime(format="%m-%d-%Y-%H%M")
     args.timestamp = timestamp
 
     data_name = args.data_filename.split(".txt")[0]
@@ -43,20 +44,28 @@ def main() -> None:
     # If we're resuming training, we have to set up our args and log file accordingly.
     if args.resume_training:
         if args.resume_dir:
+            initial_debug_value = args.debug
+
             resume_dir = args.resume_dir
 
             args_save_filename = os.path.join(
-                args.output_dir, args.resume_dir, "args.json"
+                args.output_dir,
+                args.resume_dir,
+                "args.json",
             )
             with open(file=args_save_filename) as f:
                 args = json.load(fp=f)
 
             args = argparse.Namespace(**args)
 
+            # If we reload the args, this will be set to False.
+            if initial_debug_value is True:
+                args.debug = True
+
             args.save_dir = resume_dir
             args.resume_dir = resume_dir
             args.resume_training = True
-            args.log_filename = (
+            args.log_filepath = (
                 f"{args.resume_dir.replace(args.output_dir, args.log_dir)}.log"
             )
         else:
@@ -78,17 +87,21 @@ def main() -> None:
             args.save_dir = os.path.join(args.output_dir, resume_dir)
             args.resume_dir = resume_dir
             args.resume_training = True
-            args.log_filename = os.path.join(args.log_dir, f"{args.resume_dir}.log")
+            args.log_filepath = os.path.join(args.log_dir, f"{args.resume_dir}.log")
+
+        args.mlflow_run_name = resume_dir
     else:
         # Get log file information.
         if not os.path.exists(args.log_dir):
             os.makedirs(args.log_dir, exist_ok=True)
+
         output_name = get_output_name(args, timestamp)
+        args.mlflow_run_name = output_name
+
         log_filename = f"{output_name}.log"
-        args.log_filename = os.path.join(args.log_dir, log_filename)
+        args.log_filepath = os.path.join(args.log_dir, log_filename)
 
         # Create save file.
-        args.save_name = output_name
         args.save_dir = os.path.join(args.output_dir, output_name)
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir, exist_ok=True)
@@ -97,25 +110,35 @@ def main() -> None:
         with open(file=args_save_filename, mode="w") as f:
             json.dump(obj=vars(args), fp=f, indent=2)
 
+    if args.debug:
+        args.num_epochs = 1
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
     # Logging basic configuration.
     log_msg_format = (
         "[%(asctime)s - %(levelname)s - %(filename)s: %(lineno)d] %(message)s"
     )
     handlers = [
-        logging.FileHandler(filename=args.log_filename),
+        logging.FileHandler(filename=args.log_filepath),
         logging.StreamHandler(),
     ]
-    logging.basicConfig(format=log_msg_format, level=logging.INFO, handlers=handlers)
+    logging.basicConfig(
+        format=log_msg_format,
+        level=log_level,
+        handlers=handlers,
+    )
+
+    if args.debug:
+        logger.warning("Debugging mode is turned on.")
 
     if args.resume_training:
         logger.warning("Resuming training from previous run.")
 
     logger.info(f"Starting main process with {data_name}...")
     logger.info(f"Output directory set to {args.save_dir}")
-    logger.info(f"Logging file set to {args.log_filename}")
-
-    if args.debug:
-        args.num_epochs = 1
+    logger.info(f"Logging file set to {args.log_filepath}")
 
     dataset_args = DatasetArgs(args)
     dataset = Dataset(**vars(dataset_args))
@@ -137,21 +160,30 @@ def main() -> None:
 
     trainer_args = TrainerArgs(args)
     trainer = Trainer(
-        dataset=dataset, model=model, optimizer=optimizer, **vars(trainer_args)
+        dataset=dataset,
+        model=model,
+        optimizer=optimizer,
+        **vars(trainer_args),
     )
 
-    best_results = trainer.train()
-    best_ndcg_epoch, best_model_state_dict, _ = best_results
+    mlflow.log_params(vars(args))
 
-    # Perform test.
-    model.load_state_dict(best_model_state_dict)
-    logger.info(f"Testing with model checkpoint from epoch {best_ndcg_epoch}...")
-    test_ndcg, test_hit_rate = trainer.evaluate(mode="test", model=model)
+    mlflow.end_run()
 
-    test_ndcg_msg = f"Test nDCG@{trainer_args.evaluate_k} is {test_ndcg: 0.6f}."
-    test_hit_msg = f"Test Hit@{trainer_args.evaluate_k} is {test_hit_rate: 0.6f}."
-    test_result_msg = "\n".join([test_ndcg_msg, test_hit_msg])
-    logger.info(f"\n{test_result_msg}")
+    with mlflow.start_run(run_name=args.mlflow_run_name):
+        mlflow.log_artifact(local_path=args.log_filepath, artifact_path="logs")
+        best_results = trainer.train()
+        best_ndcg_epoch, best_model_state_dict, _ = best_results
+
+        # Perform test.
+        model.load_state_dict(best_model_state_dict)
+        logger.info(f"Testing with model checkpoint from epoch {best_ndcg_epoch}...")
+        test_ndcg, test_hit_rate = trainer.evaluate(mode="test", model=model)
+
+        test_ndcg_msg = f"Test nDCG@{trainer_args.evaluate_k} is {test_ndcg: 0.6f}."
+        test_hit_msg = f"Test Hit@{trainer_args.evaluate_k} is {test_hit_rate: 0.6f}."
+        test_result_msg = "\n".join([test_ndcg_msg, test_hit_msg])
+        logger.info(f"\n{test_result_msg}")
 
 
 if __name__ == "__main__":

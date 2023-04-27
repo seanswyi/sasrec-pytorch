@@ -15,7 +15,11 @@ ItemIdxs = torch.Tensor
 
 class Dataset:
     def __init__(
-        self, batch_size: int, max_seq_len: int, data_filepath: str, debug: bool
+        self,
+        batch_size: int,
+        max_seq_len: int,
+        data_filepath: str,
+        debug: bool,
     ):
         self.debug = debug
         self.batch_size = batch_size
@@ -52,14 +56,18 @@ class Dataset:
 
     def create_mappings(
         self, data: list[list[User, Item]]
-    ) -> (dict[User, list[Item]], dict[Item, list[User]]):
+    ) -> (dict[User, list[Item]], dict[Item, list[User]],):
         """
         Convert the list of [user, item] pairs to a mapping where the users are keys \
             mapped to a list of items.
         """
         user2items = {}
         item2users = {}
-        pbar = tqdm(iterable=data, desc="Creating user2items", total=len(data))
+        pbar = tqdm(
+            iterable=data,
+            desc="Creating user2items",
+            total=len(data),
+        )
         for user, item in pbar:
             try:
                 user2items[user].append(item)
@@ -75,7 +83,7 @@ class Dataset:
 
     def create_train_valid_test(
         self, user2items: dict[User, list[Item]]
-    ) -> (dict[User, list[Item]], dict[User, list[Item]], dict[User, list[Item]]):
+    ) -> (dict[User, list[Item]], dict[User, list[Item]], dict[User, list[Item]],):
         """
         Makes train/valid/test splits for users and items.
         If a user has interacted with less than three items, we only use that for training.
@@ -150,7 +158,9 @@ class Dataset:
         return (input_seqs, item_idxs)
 
     def get_dataloader(
-        self, data: dict[User, list[Item]], split: str = "train"
+        self,
+        data: dict[User, list[Item]],
+        split: str = "train",
     ) -> DataLoader:
         """
         Create and return a DataLoader. Not considering users in this setting.

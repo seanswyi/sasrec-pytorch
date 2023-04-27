@@ -21,6 +21,11 @@ class SelfAttn(nn.Module):
         x_k = self.W_k(k)
         x_v = self.W_v(v)
 
-        attended_x = scaled_dotprod_attn(q=x_q, k=x_k, v=x_v, d=self.hidden_dim)
+        attended_x = scaled_dotprod_attn(
+            q=x_q,
+            k=x_k,
+            v=x_v,
+            d=self.hidden_dim,
+        )
 
         return attended_x

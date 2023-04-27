@@ -3,6 +3,7 @@ import copy
 import logging
 import os
 
+import mlflow
 import numpy as np
 import torch
 from torch import nn
@@ -50,9 +51,13 @@ class Trainer:
 
         self.train_dataloader = dataset.get_dataloader(data=self.train_data)
         self.valid_dataloader = dataset.get_dataloader(
-            data=self.valid_data, split="valid"
+            data=self.valid_data,
+            split="valid",
         )
-        self.test_dataloader = dataset.get_dataloader(data=self.test_data, split="test")
+        self.test_dataloader = dataset.get_dataloader(
+            data=self.test_data,
+            split="test",
+        )
 
         self.positive2negatives = dataset.positive2negatives
 
@@ -145,7 +150,11 @@ class Trainer:
         best_scheduler_state_dict = None
 
         num_steps = 0
-        epoch_pbar = trange(self.num_epochs, desc="Epochs: ", total=self.num_epochs)
+        epoch_pbar = trange(
+            self.num_epochs,
+            desc="Epochs: ",
+            total=self.num_epochs,
+        )
         for epoch in epoch_pbar:
             self.model.train()
 
@@ -215,6 +224,7 @@ class Trainer:
                     optim_state_dict=best_optim_state_dict,
                     scheduler_state_dict=best_scheduler_state_dict,
                 )
+                mlflow.log_artifact(local_path=self.save_dir)
 
             if hit >= best_hit_rate:
                 best_hit_rate = hit
@@ -227,6 +237,16 @@ class Trainer:
                 f"\n\t\tHit@{self.evaluate_k}:  {hit: 0.4f}"
             )
             logger.info(epoch_result_msg)
+
+            metrics = {
+                "training-loss": epoch_loss,
+                f"nDCG-{self.evaluate_k}": ndcg,
+                f"Hit-{self.evaluate_k}": hit,
+            }
+            mlflow.log_metrics(
+                metrics=metrics,
+                step=epoch,
+            )
 
             most_recent_model = self.model.state_dict()
             most_recent_optim = self.optimizer.state_dict()
@@ -243,20 +263,31 @@ class Trainer:
                 scheduler_state_dict=most_recent_scheduler,
                 save_name="most_recent",
             )
+            mlflow.log_artifact(local_path=self.save_dir)
 
             # Early stopping.
             if epoch - best_ndcg_epoch == self.early_stop_epoch:
                 logger.warning(f"Stopping early at epoch {epoch}.")
                 break
 
-        best_ndcg_msg = f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} at epoch {best_ndcg_epoch}."
-        best_hit_msg = f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} at epoch {best_hit_epoch}."
+        best_ndcg_msg = (
+            f"Best nDCG@{self.evaluate_k} was {best_ndcg: 0.6f} "
+            f"at epoch {best_ndcg_epoch}."
+        )
+        best_hit_msg = (
+            f"Best Hit@{self.evaluate_k} was {best_hit_rate: 0.6f} "
+            f"at epoch {best_hit_epoch}."
+        )
         best_results_msg = "\n".join([best_ndcg_msg, best_hit_msg])
         logger.info(f"Best results:\n{best_results_msg}")
 
         return (best_ndcg_epoch, best_model_state_dict, best_optim_state_dict)
 
-    def evaluate(self, mode: str = "valid", model: SASRec = None) -> (float, float):
+    def evaluate(
+        self,
+        mode: str = "valid",
+        model: SASRec = None,
+    ) -> (float, float):
         if mode == "valid":
             dataloader = self.valid_dataloader
         else:

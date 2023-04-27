@@ -1,13 +1,23 @@
 import argparse
 import os
 
-from utils import get_device
+from .utils import get_device
 
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--debug", action="store_true", default=False)
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--save",
+        action="store_true",
+        default=False,
+        help="Determines whether we save our results or not.",
+    )
     parser.add_argument(
         "--log_dir",
         default="../logs",
@@ -35,7 +45,10 @@ def get_args() -> argparse.Namespace:
         help="Maximum number of items to see. Denoted by $n$ in the paper.",
     )
     parser.add_argument(
-        "--batch_size", default=128, type=int, help="Batch size for batching data."
+        "--batch_size",
+        default=128,
+        type=int,
+        help="Batch size for batching data.",
     )
     parser.add_argument(
         "--data_root",
@@ -58,7 +71,10 @@ def get_args() -> argparse.Namespace:
 
     # Model arguments.
     parser.add_argument(
-        "--hidden_dim", default=50, type=int, help="Dimensionality of embedding matrix."
+        "--hidden_dim",
+        default=50,
+        type=int,
+        help="Dimensionality of embedding matrix.",
     )
     parser.add_argument(
         "--num_blocks",
@@ -79,15 +95,29 @@ def get_args() -> argparse.Namespace:
     )
 
     # Optimizer arguments.
-    parser.add_argument("--lr", default=0.001, type=float, help="Learning rate.")
     parser.add_argument(
-        "--beta1", default=0.9, type=float, help="Beta1 argument for Adam optimizer."
+        "--lr",
+        default=0.001,
+        type=float,
+        help="Learning rate.",
     )
     parser.add_argument(
-        "--beta2", default=0.999, type=float, help="Beta2 argument for Adam optimizer."
+        "--beta1",
+        default=0.9,
+        type=float,
+        help="Beta1 argument for Adam optimizer.",
     )
     parser.add_argument(
-        "--eps", default=1e-8, type=float, help="Epsilon value for Adam optimizer."
+        "--beta2",
+        default=0.999,
+        type=float,
+        help="Beta2 argument for Adam optimizer.",
+    )
+    parser.add_argument(
+        "--eps",
+        default=1e-8,
+        type=float,
+        help="Epsilon value for Adam optimizer.",
     )
     parser.add_argument(
         "--weight_decay",
@@ -97,9 +127,17 @@ def get_args() -> argparse.Namespace:
     )
 
     # Trainer arguments.
-    parser.add_argument("--device", default="", type=str, help="Device to use.")
     parser.add_argument(
-        "--evaluate_k", default=10, type=int, help="nDCG@k, Hit@k, etc."
+        "--device",
+        default="",
+        type=str,
+        help="Device to use.",
+    )
+    parser.add_argument(
+        "--evaluate_k",
+        default=10,
+        type=int,
+        help="nDCG@k, Hit@k, etc.",
     )
     parser.add_argument(
         "--num_epochs",
@@ -142,6 +180,20 @@ def get_args() -> argparse.Namespace:
         default="../outputs",
         type=str,
         help="Directory to save all results and artifacts.",
+    )
+
+    # MLflow arguments.
+    parser.add_argument(
+        "--mlflow_experiment",
+        default="sasrec-pytorch-experiments",
+        type=str,
+        help="Name of MLflow experiment.",
+    )
+    parser.add_argument(
+        "--mlflow_run_name",
+        default="",
+        type=str,
+        help="Name for MLflow run within the experiment.",
     )
 
     args = parser.parse_args()
