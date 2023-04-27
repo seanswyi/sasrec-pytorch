@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from utils import get_device
+from .utils import get_device
 
 
 def get_args() -> argparse.Namespace:

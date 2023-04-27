@@ -1,6 +1,5 @@
 from .arguments import get_args, DatasetArgs, ModelArgs, OptimizerArgs, TrainerArgs
 from .utils import (
-    get_device,
     get_output_name,
     get_negative_samples,
     get_positive2negatives,
@@ -15,7 +14,6 @@ __all__ = [
     "ModelArgs",
     "OptimizerArgs",
     "TrainerArgs",
-    "get_device",
     "get_output_name",
     "get_negative_samples",
     "get_positive2negatives",
