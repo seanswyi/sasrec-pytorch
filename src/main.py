@@ -33,9 +33,8 @@ def main() -> None:
 
     # Get timestamp.
     time_right_now = time.time()
-    timestamp = datetime.fromtimestamp(timestamp=time_right_now).strftime(
-        format="%m-%d-%Y-%H%M"
-    )
+    timestamp = datetime.fromtimestamp(timestamp=time_right_now)
+    timestamp = timestamp.strftime(format="%m-%d-%Y-%H%M")
     args.timestamp = timestamp
 
     data_name = args.data_filename.split(".txt")[0]
