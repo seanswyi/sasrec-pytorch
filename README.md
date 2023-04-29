@@ -13,4 +13,8 @@ There are two versions of implementation that I tried out: one using my own self
 
 Experiments were conducted on the four datasets used in the original paper: Amazon Beauty, Amazon Games, Steam, and MovieLens 1M. Hyperparameters are set to be the same, except for setting the number of epochs for early stopping to 100 rather than 20.
 
-Results differ slightly from the officially reported results, and evaluation is also conducted differently. The official implementations conduct evaluation on both the validation and test sets at every evaluation step, but my implementation only conducts evaluation on the validation set and uses the test set only once at the end of training with the best performing checkpoint.
+Results differ slightly from the officially reported results, with my implementation doing better on the Amazon datasets and doing worse on Steam and MovieLens 1M. It's worth noting that the evaluation scheme of my implementation differs from the official's: the official implementations conduct evaluation on both the validation and test sets at every evaluation step, but my implementation only conducts evaluation on the validation set and uses the test set only once at the end of training with the best performing checkpoint.
+
+<p align="center">
+  <img src="https://github.com/seanswyi/sasrec-pytorch/blob/main/images/results.png?raw=true" alt="Results" width=600/>
+</p>
