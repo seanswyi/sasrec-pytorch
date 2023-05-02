@@ -122,16 +122,20 @@ class Trainer:
 
     def save_results(
         self,
-        epoch: int,
+        ndcg_epoch: int,
         ndcg: float,
+        hit_epoch: int,
+        hit: float,
         model_state_dict: StateDict,
         optim_state_dict: StateDict,
         scheduler_state_dict: StateDict = None,
         save_name: str = "best",
     ) -> None:
         checkpoint = {
-            f"{save_name}_epoch": epoch,
+            f"{save_name}_ndcg_epoch": ndcg_epoch,
             f"{save_name}_ndcg": ndcg,
+            f"{save_name}_hit_epoch": hit_epoch,
+            f"{save_name}_hit": hit,
             f"{save_name}_model_state_dict": model_state_dict,
             f"{save_name}_optim_state_dict": optim_state_dict,
             f"{save_name}_scheduler_state_dict": scheduler_state_dict,
@@ -216,10 +220,12 @@ class Trainer:
                         x=self.scheduler.state_dict()
                     )
 
-                logger.warning(f"New best. Saving to {self.save_dir}")
+                logger.warning(f"New best nDCG. Saving to {self.save_dir}")
                 self.save_results(
-                    epoch=best_ndcg_epoch,
+                    ndcg_epoch=best_ndcg_epoch,
                     ndcg=best_ndcg,
+                    hit_epoch=best_hit_epoch,
+                    hit=hit,
                     model_state_dict=best_model_state_dict,
                     optim_state_dict=best_optim_state_dict,
                     scheduler_state_dict=best_scheduler_state_dict,
@@ -229,6 +235,25 @@ class Trainer:
             if hit >= best_hit_rate:
                 best_hit_rate = hit
                 best_hit_epoch = epoch
+                best_model_state_dict = copy.deepcopy(x=self.model.state_dict())
+                best_optim_state_dict = copy.deepcopy(x=self.optimizer.state_dict())
+
+                if self.user_scheduler:
+                    best_scheduler_state_dict = copy.deepcopy(
+                        x=self.scheduler.state_dict()
+                    )
+
+                logger.warning(f"New best hit rate. Saving to {self.save_dir}")
+                self.save_results(
+                    ndcg_epoch=best_ndcg_epoch,
+                    ndcg=best_ndcg,
+                    hit_epoch=best_hit_epoch,
+                    hit=hit,
+                    model_state_dict=best_model_state_dict,
+                    optim_state_dict=best_optim_state_dict,
+                    scheduler_state_dict=best_scheduler_state_dict,
+                )
+                mlflow.log_artifact(local_path=self.save_dir)
 
             epoch_result_msg = (
                 f"\n\tEpoch {epoch}:"
@@ -256,8 +281,10 @@ class Trainer:
                 most_recent_scheduler = self.scheduler.state_dict()
 
             self.save_results(
-                epoch=epoch,
+                ndcg_epoch=epoch,
                 ndcg=best_ndcg,
+                hit_epoch=epoch,
+                hit=best_hit_rate,
                 model_state_dict=most_recent_model,
                 optim_state_dict=most_recent_optim,
                 scheduler_state_dict=most_recent_scheduler,
@@ -266,7 +293,10 @@ class Trainer:
             mlflow.log_artifact(local_path=self.save_dir)
 
             # Early stopping.
-            if epoch - best_ndcg_epoch == self.early_stop_epoch:
+            if (
+                epoch - best_ndcg_epoch == self.early_stop_epoch
+                or epoch - best_hit_epoch == self.early_stop_epoch
+            ):
                 logger.warning(f"Stopping early at epoch {epoch}.")
                 break
 
