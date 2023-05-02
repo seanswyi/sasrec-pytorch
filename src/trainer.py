@@ -238,7 +238,7 @@ class Trainer:
                 best_model_state_dict = copy.deepcopy(x=self.model.state_dict())
                 best_optim_state_dict = copy.deepcopy(x=self.optimizer.state_dict())
 
-                if self.user_scheduler:
+                if self.use_scheduler:
                     best_scheduler_state_dict = copy.deepcopy(
                         x=self.scheduler.state_dict()
                     )
@@ -295,7 +295,7 @@ class Trainer:
             # Early stopping.
             if (
                 epoch - best_ndcg_epoch == self.early_stop_epoch
-                or epoch - best_hit_epoch == self.early_stop_epoch
+                and epoch - best_hit_epoch == self.early_stop_epoch
             ):
                 logger.warning(f"Stopping early at epoch {epoch}.")
                 break
